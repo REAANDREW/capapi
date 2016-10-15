@@ -25,6 +25,50 @@ WIN, WIN, WIN, WIN!!
 
 */
 
+const apiPort = 50000
+const rpcPort = 60000
+
+var rpcAddr = fmt.Sprintf(":%d", rpcPort)
+
+func CreateKeyStore() keyStore {
+	var key = "unsecure_key_number_1"
+	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
+	scope, _ := NewRootHTTPProxyScope(seg)
+	scope.SetPath("Bang Bang")
+	textList, _ := capnp.NewTextList(seg, 1)
+	textList.Set(0, "GET")
+	scope.SetVerbs(textList)
+
+	byteValue, _ := msg.Marshal()
+
+	keyStore := inProcessKeyStore{
+		keys: map[string][]byte{
+			key: byteValue,
+		},
+	}
+
+	return keyStore
+}
+
+func StartAPISecurityGateway(keyStore keyStore) {
+	serverListener, _ := net.Listen("tcp", rpcAddr)
+	upStreamURL, _ := url.Parse(fmt.Sprintf("http://localhost:%d", apiPort))
+	var gateway = apiSecurityGateway{
+		upStream: *upStreamURL,
+		keyStore: keyStore,
+	}
+	go gateway.start(serverListener)
+}
+
+func CreateAPISecurityGatewayProxy() apiSecurityGatewayProxy {
+	var gatewayProxy = apiSecurityGatewayProxy{
+		upStream: rpcAddr,
+	}
+
+	return gatewayProxy
+
+}
+
 func TestSomething(t *testing.T) {
 	Convey("Does something", t, func() {
 
@@ -39,41 +83,10 @@ func TestSomething(t *testing.T) {
 		})
 
 		Convey("Request", func() {
-			var key = "unsecure_key_number_1"
-			var apiPort = 50000
+			keyStore := CreateKeyStore()
+			StartAPISecurityGateway(keyStore)
 
-			msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
-			scope, _ := NewRootHTTPProxyScope(seg)
-			scope.SetPath("Bang Bang")
-			textList, _ := capnp.NewTextList(seg, 1)
-			textList.Set(0, "GET")
-			scope.SetVerbs(textList)
-
-			byteValue, _ := msg.Marshal()
-
-			var rpcAddr = ":60000"
-			//var requests = []*http.Request{}
-
-			keyStore := inProcessKeyStore{
-				keys: map[string][]byte{
-					key: byteValue,
-				},
-			}
-
-			serverListener, _ := net.Listen("tcp", rpcAddr)
-
-			upStreamURL, _ := url.Parse(fmt.Sprintf("http://localhost:%d", apiPort))
-			var gateway = apiSecurityGateway{
-				upStream: *upStreamURL,
-				keyStore: keyStore,
-			}
-
-			go gateway.start(serverListener)
-
-			var gatewayProxy = apiSecurityGatewayProxy{
-				upStream: rpcAddr,
-			}
-
+			gatewayProxy := CreateAPISecurityGatewayProxy()
 			ts := httptest.NewServer(gatewayProxy.handler())
 			defer ts.Close()
 
