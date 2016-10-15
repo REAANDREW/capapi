@@ -60,19 +60,27 @@ func StartAPISecurityGateway(keyStore keyStore) {
 	go gateway.start(serverListener)
 }
 
-func CreateAPISecurityGatewayProxy() apiSecurityGatewayProxy {
+func CreateAPISecurityGatewayProxy() *httptest.Server {
 	var gatewayProxy = apiSecurityGatewayProxy{
 		upStream: rpcAddr,
 	}
 
-	return gatewayProxy
+	ts := httptest.NewUnstartedServer(gatewayProxy.handler())
+	return ts
+}
 
+func CreateFakeEndpoint() *httptest.Server {
+	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		fmt.Fprintln(w, "You Made It!")
+	}))
+	return server
 }
 
 func TestSomething(t *testing.T) {
 	Convey("Does something", t, func() {
 
-		Convey("Test Routing", func() {
+		Convey("Test my knowledge of MUX", func() {
 			req, _ := http.NewRequest("GET", "http://localhost:3000/fubar/2", nil)
 			r := mux.NewRouter()
 			r.Path("/fubar/{id:(1|2)}")
@@ -87,20 +95,18 @@ func TestSomething(t *testing.T) {
 			StartAPISecurityGateway(keyStore)
 
 			gatewayProxy := CreateAPISecurityGatewayProxy()
-			ts := httptest.NewServer(gatewayProxy.handler())
-			defer ts.Close()
+			defer gatewayProxy.Close()
+			gatewayProxy.Start()
 
-			endpoint := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(200)
-				fmt.Fprintln(w, "You Made It!")
-			}))
-			defer endpoint.Close()
+			fakeEndpoint := CreateFakeEndpoint()
+			defer fakeEndpoint.Close()
+			fakeEndpoint.Start()
 
 			//Set a key without restriction
 			Convey("without restriction", func() {
 
 				client := &http.Client{}
-				req, _ := http.NewRequest("GET", endpoint.URL, nil)
+				req, _ := http.NewRequest("GET", fakeEndpoint.URL, nil)
 				req.Header.Add("If-None-Match", `W/"wyzzy"`)
 				resp, _ := client.Do(req)
 
