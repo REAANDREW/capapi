@@ -116,10 +116,11 @@ func TestProcess(t *testing.T) {
 				var expectedResponseCode = 200
 
 				var sut = CreateSystemUnderTest()
-				sut.setResponseBody(expectedResponseBody)
-				sut.setResponseCode(expectedResponseCode)
 				defer sut.stop()
 				sut.start()
+
+				sut.setResponseBody(expectedResponseBody)
+				sut.setResponseCode(expectedResponseCode)
 
 				client := &http.Client{}
 				req, _ := http.NewRequest("GET", sut.APIGatewayProxy.URL, nil)
