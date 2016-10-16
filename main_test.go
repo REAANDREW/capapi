@@ -56,14 +56,17 @@ type SystemUnderTest struct {
 	APIGateway      apiSecurityGateway
 	APIGatewayProxy *httptest.Server
 	FakeEndpoint    *httptest.Server
+	ResponseBody    string
+	ResponseCode    int
 }
 
 func CreateSystemUnderTest() *SystemUnderTest {
 	instance := &SystemUnderTest{}
 
 	instance.FakeEndpoint = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var expectedResponseBody = "You Made It Baby, Yeh!"
-		w.WriteHeader(200)
+		//var expectedResponseBody = "You Made It Baby, Yeh!"
+		var expectedResponseBody = instance.ResponseBody
+		w.WriteHeader(instance.ResponseCode)
 		fmt.Fprintln(w, expectedResponseBody)
 	}))
 
@@ -75,10 +78,25 @@ func CreateSystemUnderTest() *SystemUnderTest {
 
 	return instance
 }
+func (instance *SystemUnderTest) setResponseBody(value string) {
+	instance.ResponseBody = value
+}
+
+func (instance *SystemUnderTest) setResponseCode(value int) {
+	instance.ResponseCode = value
+}
 
 func (instance *SystemUnderTest) start() {
 	instance.FakeEndpoint.Start()
 	instance.APIGatewayProxy.Start()
+
+	serverListener, _ := net.Listen("tcp", ":12345")
+	upStreamURL, _ := url.Parse(instance.FakeEndpoint.URL)
+	var gateway = apiSecurityGateway{
+		upStream: *upStreamURL,
+		keyStore: CreateUnrestrictedKeyStore(),
+	}
+	go gateway.start(serverListener)
 }
 
 func (instance *SystemUnderTest) stop() {
@@ -95,18 +113,13 @@ func TestProcess(t *testing.T) {
 		Convey("unrestricted access", func() {
 			Convey("it returns successfully", func() {
 				var expectedResponseBody = "You Made It Baby, Yeh!"
+				var expectedResponseCode = 200
 
 				var sut = CreateSystemUnderTest()
+				sut.setResponseBody(expectedResponseBody)
+				sut.setResponseCode(expectedResponseCode)
 				defer sut.stop()
 				sut.start()
-
-				serverListener, _ := net.Listen("tcp", ":12345")
-				upStreamURL, _ := url.Parse(sut.FakeEndpoint.URL)
-				var gateway = apiSecurityGateway{
-					upStream: *upStreamURL,
-					keyStore: CreateUnrestrictedKeyStore(),
-				}
-				go gateway.start(serverListener)
 
 				client := &http.Client{}
 				req, _ := http.NewRequest("GET", sut.APIGatewayProxy.URL, nil)
@@ -115,7 +128,7 @@ func TestProcess(t *testing.T) {
 				defer resp.Body.Close()
 				body, _ := ioutil.ReadAll(resp.Body)
 
-				So(resp.StatusCode, ShouldEqual, 200)
+				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
 			})
 		})
