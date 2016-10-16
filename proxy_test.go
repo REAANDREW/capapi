@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"testing"
@@ -39,11 +40,13 @@ func testClient(ctx context.Context, c net.Conn) error {
 		return p.SetRequestObj(request)
 	}).Response()
 
-	_, err = result.Struct()
+	response, err := result.Struct()
 
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println(response)
 
 	return err
 }

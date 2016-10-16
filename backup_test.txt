@@ -21,6 +21,8 @@ type apiSecurityGatewayProxy struct {
 func (instance apiSecurityGatewayProxy) handler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-CAPAPI", "1")
+		//apiKey := r.Header.Get("Authorization")
+		//apiKeySplit := strings.Split(apiKey, ":")
 		apiKeyValue, err := parseAuthorization(r)
 
 		if err != nil {
@@ -32,7 +34,7 @@ func (instance apiSecurityGatewayProxy) handler() http.HandlerFunc {
 		defer c.Close()
 
 		conn := rpc.NewConn(rpc.StreamTransport(c))
-		//conn.Close()
+		conn.Close()
 
 		ctx := context.Background()
 		factory := HTTPProxyFactory{Client: conn.Bootstrap(ctx)}
@@ -41,21 +43,15 @@ func (instance apiSecurityGatewayProxy) handler() http.HandlerFunc {
 
 		apiKeyObj, _ := NewAPIKey(seg)
 		apiKeyObj.SetValue(apiKeyValue)
-
-		proxyResult, err := factory.GetHTTPProxy(ctx, func(p HTTPProxyFactory_getHTTPProxy_Params) error {
+		proxy := factory.GetHTTPProxy(ctx, func(p HTTPProxyFactory_getHTTPProxy_Params) error {
+			fmt.Println(fmt.Sprintf("In the request"))
 			return p.SetKey(apiKeyObj)
-		}).Struct()
-
-		if err != nil {
-			c.Close()
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		proxy := proxyResult.Proxy()
+		}).Proxy()
+		fmt.Println(fmt.Sprintf("Got the proxy"))
 
 		result := proxy.Request(ctx, func(p HTTPProxy_request_Params) error {
 			_, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
+			fmt.Println(fmt.Sprintf("In the request"))
 			if err != nil {
 				panic(err)
 			}
@@ -63,8 +59,12 @@ func (instance apiSecurityGatewayProxy) handler() http.HandlerFunc {
 			return p.SetRequestObj(request)
 		}).Response()
 
-		response, _ := result.Struct()
+		response, err := result.Struct()
+		if err != nil {
+			panic(err)
+		}
 
+		panic(fmt.Sprintf("GOT %v", response))
 		body, _ := response.Body()
 		status := response.Status()
 
@@ -82,17 +82,16 @@ type apiSecurityGateway struct {
 func (instance apiSecurityGateway) start(listener net.Listener) {
 
 	for {
-		if c, err := listener.Accept(); err == nil {
+		if conn, err := listener.Accept(); err == nil {
+	fmt.Println("Got one!")
 			go func() {
-				main := HTTPProxyFactory_ServerToClient(httpProxyFactory{
-					keyStore: instance.keyStore,
-					upStream: instance.upStream,
-				})
-				conn := rpc.NewConn(rpc.StreamTransport(c), rpc.MainInterface(main.Client))
+				main := HTTPProxyFactory_ServerToClient(httpProxyFactory{})
+				conn := rpc.NewConn(rpc.StreamTransport(conn), rpc.MainInterface(main.Client))
 				conn.Wait()
 			}()
 		} else {
 			continue
 		}
 	}
+	fmt.Println("Loop Finished")
 }

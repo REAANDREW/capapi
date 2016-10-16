@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 
 	capnp "zombiezen.com/go/capnproto2"
 )
@@ -31,11 +34,13 @@ func (instance HTTPProxyScope) validate(request HTTPRequest) bool {
 }
 
 type httpProxy struct {
-	APIKey APIKey
-	scope  HTTPProxyScope
+	APIKey   APIKey
+	scope    HTTPProxyScope
+	upStream url.URL
 }
 
 func (instance httpProxy) Request(call HTTPProxy_request) error {
+
 	req, _ := call.Params.RequestObj()
 
 	_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
@@ -46,11 +51,18 @@ func (instance httpProxy) Request(call HTTPProxy_request) error {
 		return call.Results.SetResponse(response)
 	}
 
-	path, _ := req.Path()
-	verb, _ := req.Verb()
+	//path, _ := req.Path()
+	//verb, _ := req.Verb()
 
-	response.SetBody(fmt.Sprintf("Path: %s, Verb: %s", path, verb))
-	response.SetStatus(200)
+	client := &http.Client{}
+	upstreamRequest, _ := http.NewRequest("GET", instance.upStream.String(), nil)
+	upstreamResponse, _ := client.Do(upstreamRequest)
+	defer upstreamResponse.Body.Close()
+	body, _ := ioutil.ReadAll(upstreamResponse.Body)
+
+	response.SetBody(string(body))
+	response.SetStatus(uint32(upstreamResponse.StatusCode))
+
 	return call.Results.SetResponse(response)
 }
 
@@ -70,19 +82,28 @@ func (instance httpProxy) Revoke(call HTTPProxy_revoke) error {
 }
 
 type httpProxyFactory struct {
+	keyStore keyStore
+	upStream url.URL
 }
 
 func (instance httpProxyFactory) GetHTTPProxy(call HTTPProxyFactory_getHTTPProxy) error {
+	fmt.Println(fmt.Sprintf("Getting the proxy"))
 	apiKey, _ := call.Params.Key()
 	apiKeyValue, _ := apiKey.Value()
 
-	bytesValue := caps[apiKeyValue]
+	bytesValue, err := instance.keyStore.Get(apiKeyValue)
+	if err != nil {
+		return err
+		//panic(err)
+	}
+
 	msg, _ := capnp.Unmarshal(bytesValue)
 	scope, _ := ReadRootHTTPProxyScope(msg)
 
 	server := HTTPProxy_ServerToClient(httpProxy{
-		APIKey: apiKey,
-		scope:  scope,
+		APIKey:   apiKey,
+		scope:    scope,
+		upStream: instance.upStream,
 	})
 
 	return call.Results.SetProxy(server)
