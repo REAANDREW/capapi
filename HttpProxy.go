@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -87,7 +86,6 @@ type httpProxyFactory struct {
 }
 
 func (instance httpProxyFactory) GetHTTPProxy(call HTTPProxyFactory_getHTTPProxy) error {
-	fmt.Println(fmt.Sprintf("Getting the proxy"))
 	apiKey, _ := call.Params.Key()
 	apiKeyValue, _ := apiKey.Value()
 

@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
+
+	log "github.com/Sirupsen/logrus"
 
 	capnp "zombiezen.com/go/capnproto2"
 	"zombiezen.com/go/capnproto2/rpc"
@@ -68,9 +71,8 @@ func (instance apiSecurityGatewayProxy) handler() http.HandlerFunc {
 		body, _ := response.Body()
 		status := response.Status()
 
-		fmt.Println(fmt.Sprintf("Got Something Body %s Code %v", body, status))
 		w.WriteHeader(int(status))
-		fmt.Fprintln(w, body)
+		fmt.Fprint(w, body)
 	})
 }
 
@@ -89,7 +91,10 @@ func (instance apiSecurityGateway) start(listener net.Listener) {
 					upStream: instance.upStream,
 				})
 				conn := rpc.NewConn(rpc.StreamTransport(c), rpc.MainInterface(main.Client))
-				conn.Wait()
+				err := conn.Wait()
+				if err != nil && err != io.EOF {
+					log.Error(err)
+				}
 			}()
 		} else {
 			continue
