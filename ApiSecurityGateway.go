@@ -82,7 +82,6 @@ type apiSecurityGateway struct {
 }
 
 func (instance apiSecurityGateway) start(listener net.Listener) {
-
 	for {
 		if c, err := listener.Accept(); err == nil {
 			go func() {

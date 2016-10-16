@@ -67,15 +67,23 @@ func CreateSystemUnderTest() *SystemUnderTest {
 		fmt.Fprintln(w, expectedResponseBody)
 	}))
 
+	var gatewayProxy = apiSecurityGatewayProxy{
+		upStream: ":12345",
+	}
+
+	instance.APIGatewayProxy = httptest.NewUnstartedServer(gatewayProxy.handler())
+
 	return instance
 }
 
 func (instance *SystemUnderTest) start() {
 	instance.FakeEndpoint.Start()
+	instance.APIGatewayProxy.Start()
 }
 
 func (instance *SystemUnderTest) stop() {
 	instance.FakeEndpoint.Close()
+	instance.APIGatewayProxy.Close()
 }
 
 var proxyFactory = httpProxyFactory{
@@ -100,16 +108,8 @@ func TestProcess(t *testing.T) {
 				}
 				go gateway.start(serverListener)
 
-				var gatewayProxy = apiSecurityGatewayProxy{
-					upStream: ":12345",
-				}
-
-				ts := httptest.NewUnstartedServer(gatewayProxy.handler())
-				defer ts.Close()
-				ts.Start()
-
 				client := &http.Client{}
-				req, _ := http.NewRequest("GET", ts.URL, nil)
+				req, _ := http.NewRequest("GET", sut.APIGatewayProxy.URL, nil)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 				resp, _ := client.Do(req)
 				defer resp.Body.Close()
