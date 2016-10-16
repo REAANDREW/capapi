@@ -52,26 +52,48 @@ func CreateFakeEndpoint() *httptest.Server {
 	return server
 }
 
+type SystemUnderTest struct {
+	APIGateway      apiSecurityGateway
+	APIGatewayProxy *httptest.Server
+	FakeEndpoint    *httptest.Server
+}
+
+func CreateSystemUnderTest() *SystemUnderTest {
+	instance := &SystemUnderTest{}
+
+	instance.FakeEndpoint = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var expectedResponseBody = "You Made It Baby, Yeh!"
+		w.WriteHeader(200)
+		fmt.Fprintln(w, expectedResponseBody)
+	}))
+
+	return instance
+}
+
+func (instance *SystemUnderTest) start() {
+	instance.FakeEndpoint.Start()
+}
+
+func (instance *SystemUnderTest) stop() {
+	instance.FakeEndpoint.Close()
+}
+
 var proxyFactory = httpProxyFactory{
 	keyStore: CreateUnrestrictedKeyStore(),
 }
 
 func TestProcess(t *testing.T) {
-	Convey("Returns", t, func() {
-		Convey("Successfully", func() {
-			Convey("with unrestricted access", func() {
+	Convey("With", t, func() {
+		Convey("unrestricted access", func() {
+			Convey("it returns successfully", func() {
 				var expectedResponseBody = "You Made It Baby, Yeh!"
 
-				fakeEndpoint := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(200)
-					fmt.Fprintln(w, expectedResponseBody)
-				}))
-
-				defer fakeEndpoint.Close()
-				fakeEndpoint.Start()
+				var sut = CreateSystemUnderTest()
+				defer sut.stop()
+				sut.start()
 
 				serverListener, _ := net.Listen("tcp", ":12345")
-				upStreamURL, _ := url.Parse(fakeEndpoint.URL)
+				upStreamURL, _ := url.Parse(sut.FakeEndpoint.URL)
 				var gateway = apiSecurityGateway{
 					upStream: *upStreamURL,
 					keyStore: CreateUnrestrictedKeyStore(),
@@ -95,6 +117,11 @@ func TestProcess(t *testing.T) {
 
 				So(resp.StatusCode, ShouldEqual, 200)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
+			})
+		})
+		Convey("restricted access to single verb", func() {
+			Convey("it returns successfully", func() {
+
 			})
 		})
 	})
