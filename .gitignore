@@ -1,2 +1,3 @@
 .cache
 *.capnp.go
+*.swp

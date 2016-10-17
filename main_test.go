@@ -27,7 +27,7 @@ WIN, WIN, WIN, WIN!!
 
 const key = "unsecure_key_number_1"
 
-func CreateUnrestrictedKeyStore() keyStore {
+func CreateKeyStore() keyStore {
 	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 	scope, _ := NewRootHTTPProxyScope(seg)
 	textList, _ := capnp.NewTextList(seg, 0)
@@ -56,12 +56,15 @@ type SystemUnderTest struct {
 	APIGateway      apiSecurityGateway
 	APIGatewayProxy *httptest.Server
 	FakeEndpoint    *httptest.Server
+	KeyStore        keyStore
 	ResponseBody    string
 	ResponseCode    int
 }
 
-func CreateSystemUnderTest() *SystemUnderTest {
+func CreateSystemUnderTest(keyStore keyStore) *SystemUnderTest {
 	instance := &SystemUnderTest{}
+
+	instance.KeyStore = keyStore
 
 	instance.FakeEndpoint = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//var expectedResponseBody = "You Made It Baby, Yeh!"
@@ -94,7 +97,7 @@ func (instance *SystemUnderTest) start() {
 	upStreamURL, _ := url.Parse(instance.FakeEndpoint.URL)
 	var gateway = apiSecurityGateway{
 		upStream: *upStreamURL,
-		keyStore: CreateUnrestrictedKeyStore(),
+		keyStore: instance.KeyStore,
 	}
 	go gateway.start(serverListener)
 }
@@ -105,22 +108,24 @@ func (instance *SystemUnderTest) stop() {
 }
 
 var proxyFactory = httpProxyFactory{
-	keyStore: CreateUnrestrictedKeyStore(),
+	keyStore: CreateKeyStore(),
 }
 
 func TestProcess(t *testing.T) {
 	Convey("With", t, func() {
 		Convey("unrestricted access", func() {
+
+			var keystore = CreateKeyStore()
+			var sut = CreateSystemUnderTest(keystore)
+			var expectedResponseBody = "You Made It Baby, Yeh!"
+			var expectedResponseCode = 200
+
+			sut.setResponseBody(expectedResponseBody)
+			sut.setResponseCode(expectedResponseCode)
+			defer sut.stop()
+			sut.start()
+
 			Convey("it returns successfully", func() {
-				var expectedResponseBody = "You Made It Baby, Yeh!"
-				var expectedResponseCode = 200
-
-				var sut = CreateSystemUnderTest()
-				defer sut.stop()
-				sut.start()
-
-				sut.setResponseBody(expectedResponseBody)
-				sut.setResponseCode(expectedResponseCode)
 
 				client := &http.Client{}
 				req, _ := http.NewRequest("GET", sut.APIGatewayProxy.URL, nil)
