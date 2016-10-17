@@ -8,13 +8,24 @@ import (
 	capnp "zombiezen.com/go/capnproto2"
 )
 
-var caps = map[string][]byte{}
+func (instance PolicySet) validate(request HTTPRequest) bool {
+	policies, err := instance.Policies()
 
-type verbValidator struct {
-	Scope HTTPProxyScope
+	if err != nil {
+		panic(err)
+	}
+
+	for i := 0; i < policies.Len(); i++ {
+
+		if policies.At(i).validate(request) {
+			return true
+		}
+	}
+
+	return false
 }
 
-func (instance HTTPProxyScope) validate(request HTTPRequest) bool {
+func (instance Policy) validate(request HTTPRequest) bool {
 	verbs, _ := instance.Verbs()
 
 	if verbs.Len() == 0 {
@@ -34,7 +45,7 @@ func (instance HTTPProxyScope) validate(request HTTPRequest) bool {
 
 type httpProxy struct {
 	APIKey   APIKey
-	scope    HTTPProxyScope
+	scope    PolicySet
 	upStream url.URL
 }
 
@@ -96,7 +107,7 @@ func (instance httpProxyFactory) GetHTTPProxy(call HTTPProxyFactory_getHTTPProxy
 	}
 
 	msg, _ := capnp.Unmarshal(bytesValue)
-	scope, _ := ReadRootHTTPProxyScope(msg)
+	scope, _ := ReadRootPolicySet(msg)
 
 	server := HTTPProxy_ServerToClient(httpProxy{
 		APIKey:   apiKey,

@@ -16,10 +16,23 @@ struct HTTPResponse {
     status @1 :UInt32;
 }
 
-struct HTTPProxyScope {
+struct KeyValuePolicy{
+    key @0 :Text;
+    values @1 :List(Text);
+}
+
+struct Policy {
     path @0 :Text;
 
     verbs @1 :List(Text);
+
+    headers @2 :List(KeyValuePolicy);
+
+    query @3 :List(KeyValuePolicy);
+}
+
+struct PolicySet{
+    policies @0 :List(Policy);
 }
 
 struct APIKey {
@@ -32,6 +45,6 @@ interface HTTPProxyFactory {
 
 interface HTTPProxy {
     request @0 (requestObj :HTTPRequest) -> (response :HTTPResponse);
-    delegate @1 (scope :HTTPProxyScope) -> (key :APIKey);
+    delegate @1 (scope :PolicySet) -> (key :APIKey);
     revoke @2 () -> (result :Bool);
 }

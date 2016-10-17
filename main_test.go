@@ -29,9 +29,20 @@ const key = "unsecure_key_number_1"
 
 func CreateKeyStore() keyStore {
 	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
-	scope, _ := NewRootHTTPProxyScope(seg)
+
+	policySet, _ := NewRootPolicySet(seg)
+
+	policyList, _ := NewPolicy_List(seg, 1)
+
+	policy, _ := NewPolicy(seg)
+
 	textList, _ := capnp.NewTextList(seg, 0)
-	scope.SetVerbs(textList)
+
+	policy.SetVerbs(textList)
+
+	policyList.Set(0, policy)
+
+	policySet.SetPolicies(policyList)
 
 	byteValue, _ := msg.Marshal()
 
