@@ -1,11 +1,13 @@
 package main
 
 import (
+	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
 func TestInProcessKeyStore(t *testing.T) {
+	log.SetLevel(log.ErrorLevel)
 	Convey("Returns", t, func() {
 		keyStore := inProcessKeyStore{
 			keys: map[string][]byte{},

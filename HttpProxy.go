@@ -15,6 +15,10 @@ func (instance PolicySet) validate(request HTTPRequest) bool {
 		panic(err)
 	}
 
+	if policies.Len() == 0 {
+		return true
+	}
+
 	for i := 0; i < policies.Len(); i++ {
 
 		if policies.At(i).validate(request) {

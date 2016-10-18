@@ -6,11 +6,14 @@ import (
 
 	capnp "zombiezen.com/go/capnproto2"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPolicy(t *testing.T) {
+
+	log.SetLevel(log.ErrorLevel)
 
 	Convey("Policy", t, func() {
 

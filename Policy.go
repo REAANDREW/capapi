@@ -2,7 +2,9 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 )
 
@@ -51,7 +53,7 @@ func validateTemplatedPath(policy Policy, request HTTPRequest) bool {
 	r := mux.NewRouter()
 	r.Path(policyPath)
 
-	req, _ := http.NewRequest("GET", "http://localhost:34567", nil)
+	req, _ := http.NewRequest("GET", "http://localhost", nil)
 
 	req.URL.Path = requestPath
 
@@ -130,8 +132,17 @@ func validatePath(policy Policy, request HTTPRequest) bool {
 }
 
 func (instance Policy) validate(request HTTPRequest) bool {
-	return validateVerbs(instance, request) &&
-		validatePath(instance, request) &&
-		validateHeaders(instance, request) &&
-		validateQuery(instance, request)
+	verbResult := validateVerbs(instance, request)
+	pathResult := validatePath(instance, request)
+	headersResult := validateHeaders(instance, request)
+	queryResult := validateQuery(instance, request)
+
+	log.WithFields(log.Fields{
+		"verbResult":   strconv.FormatBool(verbResult),
+		"pathResult":   strconv.FormatBool(pathResult),
+		"headerResult": strconv.FormatBool(headersResult),
+		"queryResult":  strconv.FormatBool(queryResult),
+	}).Info("validate")
+
+	return verbResult && pathResult && headersResult && queryResult
 }

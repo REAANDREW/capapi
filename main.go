@@ -1,6 +1,10 @@
 package main
 
-import ()
+import (
+	log "github.com/Sirupsen/logrus"
+)
 
 func main() {
+
+	log.SetLevel(log.ErrorLevel)
 }

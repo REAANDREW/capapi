@@ -11,9 +11,9 @@ import (
 	"net/url"
 	"testing"
 
+	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 	capnp "zombiezen.com/go/capnproto2"
-	//	"github.com/gorilla/mux"
 )
 
 /*
@@ -123,6 +123,7 @@ var proxyFactory = httpProxyFactory{
 }
 
 func TestProcess(t *testing.T) {
+	log.SetLevel(log.ErrorLevel)
 	Convey("With", t, func() {
 		Convey("unrestricted access", func() {
 
