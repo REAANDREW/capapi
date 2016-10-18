@@ -8,27 +8,6 @@ import (
 	capnp "zombiezen.com/go/capnproto2"
 )
 
-func (instance PolicySet) validate(request HTTPRequest) bool {
-	policies, err := instance.Policies()
-
-	if err != nil {
-		panic(err)
-	}
-
-	if policies.Len() == 0 {
-		return true
-	}
-
-	for i := 0; i < policies.Len(); i++ {
-
-		if policies.At(i).validate(request) {
-			return true
-		}
-	}
-
-	return false
-}
-
 type httpProxy struct {
 	APIKey   APIKey
 	scope    PolicySet
@@ -46,9 +25,6 @@ func (instance httpProxy) Request(call HTTPProxy_request) error {
 		response.SetStatus(401)
 		return call.Results.SetResponse(response)
 	}
-
-	//path, _ := req.Path()
-	//verb, _ := req.Verb()
 
 	client := &http.Client{}
 	upstreamRequest, _ := http.NewRequest("GET", instance.upStream.String(), nil)
