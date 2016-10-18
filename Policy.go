@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -60,17 +59,11 @@ func validateTemplatedPath(policy Policy, request HTTPRequest) bool {
 	return r.Match(req, &routeMatch)
 }
 
-func validateHeaders(policy Policy, request HTTPRequest) bool {
-	reqHeaders, err := request.Headers()
-	checkError(err)
-
-	policyHeaders, err := policy.Headers()
-	checkError(err)
-
-	for i := 0; i < reqHeaders.Len(); i++ {
+func validateKeyValues(keyValues KeyValue_List, keyValuePolicies KeyValuePolicy_List) bool {
+	for i := 0; i < keyValues.Len(); i++ {
 		valid := false
-		for j := 0; j < policyHeaders.Len(); j++ {
-			req := reqHeaders.At(i)
+		for j := 0; j < keyValuePolicies.Len(); j++ {
+			req := keyValues.At(i)
 
 			reqKey, err := req.Key()
 			checkError(err)
@@ -78,7 +71,7 @@ func validateHeaders(policy Policy, request HTTPRequest) bool {
 			reqKeyValue, err := req.Value()
 			checkError(err)
 
-			policy := policyHeaders.At(i)
+			policy := keyValuePolicies.At(i)
 
 			policyKey, err := policy.Key()
 			checkError(err)
@@ -108,9 +101,27 @@ func validateHeaders(policy Policy, request HTTPRequest) bool {
 			return false
 		}
 	}
-
-	fmt.Println(fmt.Sprintf("Returning true"))
 	return true
+}
+
+func validateHeaders(policy Policy, request HTTPRequest) bool {
+	reqHeaders, err := request.Headers()
+	checkError(err)
+
+	policyHeaders, err := policy.Headers()
+	checkError(err)
+
+	return validateKeyValues(reqHeaders, policyHeaders)
+}
+
+func validateQuery(policy Policy, request HTTPRequest) bool {
+	reqQuery, err := request.Query()
+	checkError(err)
+
+	policyQuery, err := policy.Query()
+	checkError(err)
+
+	return validateKeyValues(reqQuery, policyQuery)
 }
 
 func validatePath(policy Policy, request HTTPRequest) bool {
@@ -121,5 +132,6 @@ func validatePath(policy Policy, request HTTPRequest) bool {
 func (instance Policy) validate(request HTTPRequest) bool {
 	return validateVerbs(instance, request) &&
 		validatePath(instance, request) &&
-		validateHeaders(instance, request)
+		validateHeaders(instance, request) &&
+		validateQuery(instance, request)
 }

@@ -151,6 +151,28 @@ func TestPolicy(t *testing.T) {
 				})
 				Convey("when the request has a query string key which is not present in the query policy", func() {
 
+					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
+
+					policy, _ := NewPolicy(seg)
+
+					queryList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
+					keyValuePolicy.SetKey("A")
+					queryList.Set(0, keyValuePolicy)
+
+					policy.SetQuery(queryList)
+
+					request, _ := NewHTTPRequest(seg)
+
+					query, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
+					keyValue.SetKey("B")
+					keyValue.SetValue("1")
+					query.Set(0, keyValue)
+
+					request.SetQuery(query)
+
+					So(policy.validate(request), ShouldEqual, false)
 				})
 				Convey("when the request has a query value which does not match a query policy value for the specified key", func() {
 
