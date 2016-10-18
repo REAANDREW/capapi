@@ -75,9 +75,24 @@ func TestPolicy(t *testing.T) {
 					request.SetVerb("GET")
 
 					So(policy.validate(request), ShouldEqual, false)
-
 				})
 				Convey("when the request verb does not match a any policy verbs", func() {
+					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
+
+					policy, _ := NewPolicy(seg)
+
+					verbs, _ := capnp.NewTextList(seg, 2)
+
+					verbs.Set(0, "PUT")
+					verbs.Set(1, "POST")
+
+					policy.SetVerbs(verbs)
+
+					request, _ := NewHTTPRequest(seg)
+
+					request.SetVerb("GET")
+
+					So(policy.validate(request), ShouldEqual, false)
 
 				})
 				Convey("when the request has a header key which is not present in the header policy", func() {
