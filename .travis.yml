@@ -5,8 +5,8 @@ go:
  - tip
 
 install:
- - go get -u -t zombiezen.com/go/capnproto2/...
- - source compile.sh
+ - make install
 
 script:
- - go test -v ./...
+ - make compile
+ - make test
