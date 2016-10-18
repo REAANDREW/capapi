@@ -1,15 +1,15 @@
-capnp:
-	capnp compile -I$GOPATH/src/zombiezen.com/go/capnproto2/std -ogo capapi.capnp
+capnproto:
+	capnp compile -I$$GOPATH/src/zombiezen.com/go/capnproto2/std -ogo capapi.capnp
 
-build: capnp
+build: 
 	go build
 
 test:
 	go test -v ./...
 
-install:
+install: capnproto
 	go get -u -t zombiezen.com/go/capnproto2/...
 	go get -t ./...
 
 
-.PHONY: capnp build test install
+.PHONY: capnproto build test install
