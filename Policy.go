@@ -7,12 +7,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-/*
-import (
-	"github.com/gorilla/mux"
-)
-*/
-
 type validatePolicy func(policy Policy, request HTTPRequest) bool
 
 func validateVerbs(policy Policy, request HTTPRequest) bool {
@@ -74,20 +68,43 @@ func validateHeaders(policy Policy, request HTTPRequest) bool {
 	checkError(err)
 
 	for i := 0; i < reqHeaders.Len(); i++ {
-		found := false
+		valid := false
 		for j := 0; j < policyHeaders.Len(); j++ {
-			reqKey, err := reqHeaders.At(i).Key()
+			req := reqHeaders.At(i)
+
+			reqKey, err := req.Key()
 			checkError(err)
 
-			policyKey, err := policyHeaders.At(i).Key()
+			reqKeyValue, err := req.Value()
+			checkError(err)
+
+			policy := policyHeaders.At(i)
+
+			policyKey, err := policy.Key()
+			checkError(err)
+
+			policyValues, err := policy.Values()
 			checkError(err)
 
 			if reqKey == policyKey {
-				found = true
-				break
+				if policyValues.Len() == 0 {
+					valid = true
+				} else {
+					for k := 0; k < policyValues.Len(); k++ {
+						policyKeyValue, err := policyValues.At(k)
+						checkError(err)
+
+						if reqKeyValue == policyKeyValue {
+							valid = true
+						}
+					}
+				}
+				if valid {
+					break
+				}
 			}
 		}
-		if !found {
+		if !valid {
 			return false
 		}
 	}

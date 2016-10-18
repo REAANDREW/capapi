@@ -118,7 +118,36 @@ func TestPolicy(t *testing.T) {
 					So(policy.validate(request), ShouldEqual, false)
 				})
 				Convey("when the request has a header value which does not match a header policy value for the specified key", func() {
+					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
+					policy, _ := NewPolicy(seg)
+
+					headerList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
+					keyValuePolicy.SetKey("X-Client")
+
+					valuesList, _ := capnp.NewTextList(seg, 3)
+					valuesList.Set(0, "1")
+					valuesList.Set(0, "2")
+					valuesList.Set(0, "3")
+
+					keyValuePolicy.SetValues(valuesList)
+
+					headerList.Set(0, keyValuePolicy)
+
+					policy.SetHeaders(headerList)
+
+					request, _ := NewHTTPRequest(seg)
+
+					headers, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
+					keyValue.SetKey("X-Client")
+					keyValue.SetValue("4")
+					headers.Set(0, keyValue)
+
+					request.SetHeaders(headers)
+
+					So(policy.validate(request), ShouldEqual, false)
 				})
 				Convey("when the request has a query string key which is not present in the query policy", func() {
 
