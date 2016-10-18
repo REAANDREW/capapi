@@ -9,6 +9,16 @@ struct HTTPRequest {
 
     verb @1 :Text;
     # The verb of the http request
+
+    headers @2 :List(KeyValue);
+
+    query @3 :List(KeyValue);
+}
+
+struct KeyValue{
+    key @0 :Text;
+
+    value @1 :Text;
 }
 
 struct HTTPResponse {
