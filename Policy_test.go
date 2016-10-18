@@ -42,7 +42,6 @@ func TestPolicy(t *testing.T) {
 					request.SetPath("/some/other/path")
 
 					So(policy.validate(request), ShouldEqual, false)
-
 				})
 				Convey("when the request path does not match the policy templated path", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
@@ -57,7 +56,6 @@ func TestPolicy(t *testing.T) {
 
 					result := policy.validate(request)
 					So(result, ShouldEqual, false)
-
 				})
 				Convey("when the request verb does not match a single policy verb", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
@@ -150,7 +148,6 @@ func TestPolicy(t *testing.T) {
 					So(policy.validate(request), ShouldEqual, false)
 				})
 				Convey("when the request has a query string key which is not present in the query policy", func() {
-
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
 					policy, _ := NewPolicy(seg)
@@ -175,13 +172,52 @@ func TestPolicy(t *testing.T) {
 					So(policy.validate(request), ShouldEqual, false)
 				})
 				Convey("when the request has a query value which does not match a query policy value for the specified key", func() {
+					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
+					policy, _ := NewPolicy(seg)
+
+					queryList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
+					keyValuePolicy.SetKey("X-Client")
+
+					valuesList, _ := capnp.NewTextList(seg, 3)
+					valuesList.Set(0, "1")
+					valuesList.Set(0, "2")
+					valuesList.Set(0, "3")
+
+					keyValuePolicy.SetValues(valuesList)
+
+					queryList.Set(0, keyValuePolicy)
+
+					policy.SetQuery(queryList)
+
+					request, _ := NewHTTPRequest(seg)
+
+					query, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
+					keyValue.SetKey("X-Client")
+					keyValue.SetValue("4")
+					query.Set(0, keyValue)
+
+					request.SetQuery(query)
+
+					So(policy.validate(request), ShouldEqual, false)
 				})
 			})
 
 			Convey("true", func() {
 				Convey("when the request path does match the policy exact path", func() {
+					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
+					policy, _ := NewPolicy(seg)
+
+					policy.SetPath("/some/path")
+
+					request, _ := NewHTTPRequest(seg)
+
+					request.SetPath("/some/path")
+
+					So(policy.validate(request), ShouldEqual, true)
 				})
 				Convey("when the request path does match the policy templated path", func() {
 
