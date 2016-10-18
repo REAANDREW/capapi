@@ -5,6 +5,14 @@ import (
 	"strings"
 )
 
+func checkError(err error) {
+
+	//Stay verbose for the time being
+	if err != nil {
+		panic(err)
+	}
+}
+
 func parseAuthorization(request *http.Request) (string, error) {
 
 	header := request.Header.Get("Authorization")

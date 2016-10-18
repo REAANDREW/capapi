@@ -25,24 +25,6 @@ func (instance PolicySet) validate(request HTTPRequest) bool {
 	return false
 }
 
-func (instance Policy) validate(request HTTPRequest) bool {
-	verbs, _ := instance.Verbs()
-
-	if verbs.Len() == 0 {
-		return true
-	}
-
-	verb, _ := request.Verb()
-	for i := 0; i < verbs.Len(); i++ {
-		scopedVerb, _ := verbs.At(i)
-		if verb == scopedVerb {
-			return true
-		}
-	}
-
-	return false
-}
-
 type httpProxy struct {
 	APIKey   APIKey
 	scope    PolicySet
