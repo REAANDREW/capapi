@@ -9,6 +9,7 @@ test:
 
 install:
 	go get -u -t zombiezen.com/go/capnproto2/...
+	go get -t ./...
 
 
 .PHONY: capnp build test install
