@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	. "github.com/onsi/gomega"
@@ -123,6 +124,7 @@ func (instance *SystemUnderTest) stop() {
 	instance.FakeEndpoint.Close()
 	instance.APIGatewayProxy.Close()
 	instance.ServerListener.Close()
+	time.Sleep(1 * time.Millisecond)
 }
 
 type PolicyBuilder struct {
@@ -262,6 +264,7 @@ func TestWithUnRestrictedAccess(t *testing.T) {
 
 func TestWithRestrictedAccessToSingleVerb(t *testing.T) {
 
+	log.SetLevel(log.DebugLevel)
 	RegisterTestingT(t)
 
 	var keystore = CreateKeyStore()

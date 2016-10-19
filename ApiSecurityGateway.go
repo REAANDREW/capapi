@@ -35,7 +35,6 @@ func (instance apiSecurityGatewayProxy) handler() http.HandlerFunc {
 		defer c.Close()
 
 		conn := rpc.NewConn(rpc.StreamTransport(c))
-		//conn.Close()
 
 		ctx := context.Background()
 		factory := HTTPProxyFactory{Client: conn.Bootstrap(ctx)}
@@ -50,6 +49,7 @@ func (instance apiSecurityGatewayProxy) handler() http.HandlerFunc {
 		}).Struct()
 
 		if err != nil {
+			log.Error(err)
 			c.Close()
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -63,6 +63,7 @@ func (instance apiSecurityGatewayProxy) handler() http.HandlerFunc {
 				panic(err)
 			}
 			request, _ := NewHTTPRequest(seg)
+			request.SetVerb(r.Method)
 			return p.SetRequestObj(request)
 		}).Response()
 

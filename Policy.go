@@ -25,6 +25,10 @@ func validateVerbs(policy Policy, request HTTPRequest) bool {
 
 	for i := 0; i < verbs.Len(); i++ {
 		scopedVerb, _ := verbs.At(i)
+		log.WithFields(log.Fields{
+			"requestVerb": verb,
+			"policyVerb":  scopedVerb,
+		}).Debug("validating verb")
 		if verb == scopedVerb {
 			return true
 		}

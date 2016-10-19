@@ -2,3 +2,5 @@
 *.capnp.go
 *.swp
 capapi
+capnproto-c++-0.5.3.tar.gz
+capnproto-c++-0.5.3
