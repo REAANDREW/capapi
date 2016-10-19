@@ -1,6 +1,7 @@
 capnproto:
+	apt-get install capnproto
 	go get -u -t zombiezen.com/go/capnproto2/...
-	${HOME}/gopath/bin/capnp compile -I$$GOPATH/src/zombiezen.com/go/capnproto2/std -ogo capapi.capnp
+	capnp compile -I$$GOPATH/src/zombiezen.com/go/capnproto2/std -ogo capapi.capnp
 
 build: 
 	go build

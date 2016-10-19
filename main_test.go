@@ -1,18 +1,19 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"strings"
-	//	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
-	. "github.com/smartystreets/goconvey/convey"
+	. "github.com/onsi/gomega"
 	capnp "zombiezen.com/go/capnproto2"
 )
 
@@ -70,6 +71,7 @@ type SystemUnderTest struct {
 	KeyStore        keyStore
 	ResponseBody    string
 	ResponseCode    int
+	ServerListener  net.Listener
 }
 
 func CreateSystemUnderTest(keyStore keyStore) *SystemUnderTest {
@@ -104,7 +106,11 @@ func (instance *SystemUnderTest) start() {
 	instance.FakeEndpoint.Start()
 	instance.APIGatewayProxy.Start()
 
-	serverListener, _ := net.Listen("tcp", ":12345")
+	serverListener, err := net.Listen("tcp", ":12345")
+	instance.ServerListener = serverListener
+
+	checkError(err)
+
 	upStreamURL, _ := url.Parse(instance.FakeEndpoint.URL)
 	var gateway = apiSecurityGateway{
 		upStream: *upStreamURL,
@@ -116,45 +122,177 @@ func (instance *SystemUnderTest) start() {
 func (instance *SystemUnderTest) stop() {
 	instance.FakeEndpoint.Close()
 	instance.APIGatewayProxy.Close()
+	instance.ServerListener.Close()
 }
 
-var proxyFactory = httpProxyFactory{
-	keyStore: CreateKeyStore(),
+type PolicyBuilder struct {
+	Path    string
+	Verbs   []string
+	Headers map[string][]string
+	Query   map[string][]string
 }
 
-func TestProcess(t *testing.T) {
-	log.SetLevel(log.ErrorLevel)
-	Convey("With", t, func() {
-		Convey("unrestricted access", func() {
+func newPolicyBuilder() PolicyBuilder {
+	return PolicyBuilder{
+		Verbs:   []string{},
+		Headers: map[string][]string{},
+		Query:   map[string][]string{},
+	}
+}
 
-			var keystore = CreateKeyStore()
-			var sut = CreateSystemUnderTest(keystore)
-			var expectedResponseBody = "You Made It Baby, Yeh!"
-			var expectedResponseCode = 200
+func (instance PolicyBuilder) withVerb(verb string) PolicyBuilder {
+	return PolicyBuilder{
+		Path:    instance.Path,
+		Verbs:   append(instance.Verbs, verb),
+		Headers: instance.Headers,
+		Query:   instance.Query,
+	}
+}
 
-			sut.setResponseBody(expectedResponseBody)
-			sut.setResponseCode(expectedResponseCode)
-			defer sut.stop()
-			sut.start()
+func (instance PolicyBuilder) build(seg *capnp.Segment) Policy {
+	policy, _ := NewPolicy(seg)
 
-			Convey("it returns successfully", func() {
+	verbList, _ := capnp.NewTextList(seg, int32(len(instance.Verbs)))
+	for i := 0; i < len(instance.Verbs); i++ {
+		verbList.Set(i, instance.Verbs[i])
+	}
+	policy.SetVerbs(verbList)
 
-				client := &http.Client{}
-				req, _ := http.NewRequest("GET", sut.APIGatewayProxy.URL, nil)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				resp, _ := client.Do(req)
-				defer resp.Body.Close()
-				body, _ := ioutil.ReadAll(resp.Body)
+	headerList, _ := NewKeyValuePolicy_List(seg, int32(len(instance.Headers)))
+	count := 0
+	for key, value := range instance.Headers {
+		headerPolicy, _ := NewKeyValuePolicy(seg)
+		headerPolicy.SetKey(key)
 
-				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
-			})
-		})
-		Convey("restricted access to single verb", func() {
-			Convey("it returns successfully", func() {
+		headerValueList, _ := capnp.NewTextList(seg, int32(len(value)))
+		for i := 0; i < len(value); i++ {
+			headerValueList.Set(i, value[i])
+		}
+		headerPolicy.SetValues(headerValueList)
 
-			})
-		})
-	})
+		headerList.Set(count, headerPolicy)
+		count++
+	}
+	policy.SetHeaders(headerList)
 
+	queryList, _ := NewKeyValuePolicy_List(seg, int32(len(instance.Query)))
+	count = 0
+	for key, value := range instance.Query {
+		queryPolicy, _ := NewKeyValuePolicy(seg)
+		queryPolicy.SetKey(key)
+
+		queryValueList, _ := capnp.NewTextList(seg, int32(len(value)))
+		for i := 0; i < len(value); i++ {
+			queryValueList.Set(i, value[i])
+		}
+		queryPolicy.SetValues(queryValueList)
+
+		queryList.Set(count, queryPolicy)
+		count++
+	}
+	policy.SetQuery(queryList)
+
+	return policy
+}
+
+type PolicySetBuilder struct {
+	PolicyBuilders []PolicyBuilder
+}
+
+func (instance PolicySetBuilder) withPolicy(builder PolicyBuilder) PolicySetBuilder {
+	return PolicySetBuilder{
+		PolicyBuilders: append(instance.PolicyBuilders, builder),
+	}
+}
+
+func (instance PolicySetBuilder) build() (string, []byte) {
+	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
+
+	policySet, _ := NewRootPolicySet(seg)
+	policyList, _ := NewPolicy_List(seg, int32(len(instance.PolicyBuilders)))
+
+	for i := 0; i < len(instance.PolicyBuilders); i++ {
+		policy := instance.PolicyBuilders[i].build(seg)
+		policyList.Set(i, policy)
+	}
+
+	policySet.SetPolicies(policyList)
+
+	byteValue, _ := msg.Marshal()
+	keyBytes := make([]byte, 64)
+	_, err := rand.Read(keyBytes)
+	checkError(err)
+
+	key := base64.StdEncoding.EncodeToString(keyBytes)
+	log.WithFields(log.Fields{
+		"key": key,
+	}).Info("Key Generated")
+	return key, byteValue
+}
+
+func newPolicySetBuilder() PolicySetBuilder {
+	return PolicySetBuilder{
+		PolicyBuilders: []PolicyBuilder{},
+	}
+}
+
+func TestWithUnRestrictedAccess(t *testing.T) {
+
+	RegisterTestingT(t)
+
+	var keystore = CreateKeyStore()
+	var sut = CreateSystemUnderTest(keystore)
+	var expectedResponseBody = "You Made It Baby, Yeh!"
+	var expectedResponseCode = 200
+
+	sut.setResponseBody(expectedResponseBody)
+	sut.setResponseCode(expectedResponseCode)
+	defer sut.stop()
+	sut.start()
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", sut.APIGatewayProxy.URL, nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+	resp, _ := client.Do(req)
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	Expect(resp.StatusCode).To(Equal(expectedResponseCode))
+	Expect(strings.Trim(string(body), "\n")).To(Equal(expectedResponseBody))
+}
+
+func TestWithRestrictedAccessToSingleVerb(t *testing.T) {
+
+	RegisterTestingT(t)
+
+	var keystore = CreateKeyStore()
+	var sut = CreateSystemUnderTest(keystore)
+	var expectedResponseBody = "You Made It Baby, Yeh!"
+	var expectedResponseCode = 200
+
+	sut.setResponseBody(expectedResponseBody)
+	sut.setResponseCode(expectedResponseCode)
+	defer sut.stop()
+	sut.start()
+
+	key, bytes := newPolicySetBuilder().
+		withPolicy(newPolicyBuilder().withVerb("PUT")).
+		build()
+
+	keystore.Set(key, bytes)
+
+	client := &http.Client{}
+	log.WithFields(log.Fields{
+		"url": sut.APIGatewayProxy.URL,
+	}).Info("API Gateway Proxy URL")
+	req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error(err)
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	Expect(resp.StatusCode).To(Equal(expectedResponseCode))
+	Expect(strings.Trim(string(body), "\n")).To(Equal(expectedResponseBody))
 }
