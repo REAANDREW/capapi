@@ -13,7 +13,7 @@ build:
 	go build
 
 test:
-	go test -v ./...
+	(cd tests && go test -v ./...)
 
 install: capnproto
 	go get -t ./...
