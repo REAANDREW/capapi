@@ -28,7 +28,7 @@ Capapi is a object capability based HTTP API Security Gateway.
     - A permitted list of header keys and optional list of permitted values for the specified key
     - A permitted list of querystring keys and optional list of permitted values for the specified key
 - When a PolicySet is Delegated, during execution the top level parent capability will be evaluated first meaning that each delegation has to have the same or less capability scope than its parent capability
-- When a PolicySet is Revoked call derived PolicySets are also revoked
+- When a PolicySet is Revoked all derived PolicySets are also revoked
 - When a PolicySet is Delegated, it is not necessary to check a delegation as during exeuction it will always be evalutated after its parent.
 - A Delegation or Revocation has to be executed by the Gateway.
 - If a request contains:
