@@ -31,13 +31,28 @@ Capapi is a object capability based HTTP API Security Gateway.
 - When a PolicySet is Revoked all derived PolicySets are also revoked
 - When a PolicySet is Delegated, it is not necessary to check a delegation as during exeuction it will always be evalutated after its parent.
 - A Delegation or Revocation has to be executed by the Gateway.
-- If a request contains:
+- If any of the following conditions are true then the request is not authorized and will not be executed:
     - A path which is not supported by any policy in the set
     - A verbs which is not supported by any policy in the set
     - A header key which is not supported by any policy in the set
     - A header value which is not supported by any policy in the set for the specified key
     - A querystring key which is not supported by any policy in the set
     - A querystring value which is not supported by any policy in the set for the specified key
-  Then the request is not authorized and will not be executed.
+ 
 
-To ensure that the caller only has a reference to a Proxy, this project uses the Cap'N Proto library to serialize the PolicySet using a Type System.
+To ensure that the caller only has a reference to a Proxy, this project uses the [Cap'N Proto](https://capnproto.org) library to serialize the PolicySet using a Type System.
+
+> WHAT ARE OBJECT CAPABILITIES?
+> A capability is:
+>
+> an unguessable,
+> communicable,
+> token of authority
+> which references an object
+> and a set of access rights.
+>
+> DESIGNING SECURE SYSTEMS
+> WITH OBJECT-CAPABILITIES, PYTHON, AND CAP'N PROTO
+> Drew Fisher
+> https://smpfle21zb7r5nnat5uq.oasis.sandstorm.io/index.html#/
+>
