@@ -43,16 +43,20 @@ Capapi is a object capability based HTTP API Security Gateway.
 To ensure that the caller only has a reference to a Proxy, this project uses the [Cap'N Proto](https://capnproto.org) library to serialize the PolicySet using a Type System.
 
 > WHAT ARE OBJECT CAPABILITIES?
+>
 > A capability is:
 >
-> an unguessable,
-> communicable,
-> token of authority
-> which references an object
-> and a set of access rights.
+> - an unguessable,
+> - communicable,
+> - token of authority
+> - which references an object
+> - and a set of access rights.
 >
 > DESIGNING SECURE SYSTEMS
+>
 > WITH OBJECT-CAPABILITIES, PYTHON, AND CAP'N PROTO
+>
 > Drew Fisher
+>
 > https://smpfle21zb7r5nnat5uq.oasis.sandstorm.io/index.html#/
 >
