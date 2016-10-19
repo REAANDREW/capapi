@@ -4,6 +4,20 @@ go:
  - release
  - tip
 
+env:
+  global:
+    - CC=gcc-4.8
+    - CXX=g++-4.8
+    - export PATH="$PATH:$HOME/bin"
+    - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/lib"
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-4.8
+      - g++-4.8
+
 install:
  - make install
 
