@@ -1,23 +1,26 @@
-package main
+package tests
 
 import (
-	log "github.com/Sirupsen/logrus"
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/reaandrew/capapi/core"
+	"github.com/reaandrew/capapi/infrastructure/inproc"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestInProcessKeyStore(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 	Convey("Returns", t, func() {
-		keyStore := inProcessKeyStore{
-			keys: map[string][]byte{},
+		keyStore := inproc.InProcessKeyStore{
+			Keys: map[string][]byte{},
 		}
 
 		Convey("err when capability key is not found", func() {
 
 			_, err := keyStore.Get("talula")
 
-			So(err, ShouldEqual, errAPIKeyNotFound)
+			So(err, ShouldEqual, core.ErrAPIKeyNotFound)
 		})
 
 		Convey("value when key is found", func() {

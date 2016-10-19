@@ -1,4 +1,4 @@
-package main
+package tests
 
 import (
 	"fmt"
@@ -9,8 +9,12 @@ import (
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/reaandrew/capapi/capability"
+	"github.com/reaandrew/capapi/infrastructure/inproc"
 	. "github.com/smartystreets/goconvey/convey"
 	capnp "zombiezen.com/go/capnproto2"
+
+	"github.com/reaandrew/capapi/core"
 )
 
 /*
@@ -24,14 +28,14 @@ WIN, WIN, WIN, WIN!!
 
 const key = "unsecure_key_number_1"
 
-func CreateKeyStore() keyStore {
+func CreateKeyStore() core.KeyStore {
 	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-	policySet, _ := NewRootPolicySet(seg)
+	policySet, _ := capability.NewRootPolicySet(seg)
 
-	policyList, _ := NewPolicy_List(seg, 1)
+	policyList, _ := capability.NewPolicy_List(seg, 1)
 
-	policy, _ := NewPolicy(seg)
+	policy, _ := capability.NewPolicy(seg)
 
 	textList, _ := capnp.NewTextList(seg, 0)
 
@@ -43,8 +47,8 @@ func CreateKeyStore() keyStore {
 
 	byteValue, _ := msg.Marshal()
 
-	keyStore := inProcessKeyStore{
-		keys: map[string][]byte{
+	keyStore := inproc.InProcessKeyStore{
+		Keys: map[string][]byte{
 			key: byteValue,
 		},
 	}
@@ -71,10 +75,10 @@ func TestCapapi(t *testing.T) {
 			var expectedResponseBody = "You Made It Baby, Yeh!"
 			var expectedResponseCode = 200
 
-			sut.setResponseBody(expectedResponseBody)
-			sut.setResponseCode(expectedResponseCode)
-			defer sut.stop()
-			sut.start()
+			sut.SetResponseBody(expectedResponseBody)
+			sut.SetResponseCode(expectedResponseCode)
+			defer sut.Stop()
+			sut.Start()
 			client := &http.Client{}
 			req, _ := http.NewRequest("GET", sut.APIGatewayProxy.URL, nil)
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
@@ -92,14 +96,14 @@ func TestCapapi(t *testing.T) {
 			var expectedResponseBody = "You Made It Baby, Yeh!"
 			var expectedResponseCode = 200
 
-			sut.setResponseBody(expectedResponseBody)
-			sut.setResponseCode(expectedResponseCode)
-			defer sut.stop()
-			sut.start()
+			sut.SetResponseBody(expectedResponseBody)
+			sut.SetResponseCode(expectedResponseCode)
+			defer sut.Stop()
+			sut.Start()
 
-			key, bytes := newPolicySetBuilder().
-				withPolicy(newPolicyBuilder().withVerb("PUT")).
-				build()
+			key, bytes := capability.NewPolicySetBuilder().
+				WithPolicy(capability.NewPolicyBuilder().WithVerb("PUT")).
+				Build()
 
 			keystore.Set(key, bytes)
 

@@ -1,6 +1,6 @@
-package main
+package capability
 
-func (instance PolicySet) validate(request HTTPRequest) bool {
+func (instance PolicySet) Validate(request HTTPRequest) bool {
 	policies, err := instance.Policies()
 
 	if err != nil {
@@ -13,7 +13,7 @@ func (instance PolicySet) validate(request HTTPRequest) bool {
 
 	for i := 0; i < policies.Len(); i++ {
 
-		if policies.At(i).validate(request) {
+		if policies.At(i).Validate(request) {
 			return true
 		}
 	}

@@ -1,4 +1,4 @@
-package main
+package capability
 
 import (
 	"crypto/rand"
@@ -6,26 +6,28 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	capnp "zombiezen.com/go/capnproto2"
+
+	"github.com/reaandrew/capapi/core"
 )
 
 type PolicySetBuilder struct {
 	PolicyBuilders []PolicyBuilder
 }
 
-func (instance PolicySetBuilder) withPolicy(builder PolicyBuilder) PolicySetBuilder {
+func (instance PolicySetBuilder) WithPolicy(builder PolicyBuilder) PolicySetBuilder {
 	return PolicySetBuilder{
 		PolicyBuilders: append(instance.PolicyBuilders, builder),
 	}
 }
 
-func (instance PolicySetBuilder) build() (string, []byte) {
+func (instance PolicySetBuilder) Build() (string, []byte) {
 	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
 	policySet, _ := NewRootPolicySet(seg)
 	policyList, _ := NewPolicy_List(seg, int32(len(instance.PolicyBuilders)))
 
 	for i := 0; i < len(instance.PolicyBuilders); i++ {
-		policy := instance.PolicyBuilders[i].build(seg)
+		policy := instance.PolicyBuilders[i].Build(seg)
 		policyList.Set(i, policy)
 	}
 
@@ -34,7 +36,7 @@ func (instance PolicySetBuilder) build() (string, []byte) {
 	byteValue, _ := msg.Marshal()
 	keyBytes := make([]byte, 64)
 	_, err := rand.Read(keyBytes)
-	checkError(err)
+	core.CheckError(err)
 
 	key := base64.StdEncoding.EncodeToString(keyBytes)
 	log.WithFields(log.Fields{
@@ -43,7 +45,7 @@ func (instance PolicySetBuilder) build() (string, []byte) {
 	return key, byteValue
 }
 
-func newPolicySetBuilder() PolicySetBuilder {
+func NewPolicySetBuilder() PolicySetBuilder {
 	return PolicySetBuilder{
 		PolicyBuilders: []PolicyBuilder{},
 	}

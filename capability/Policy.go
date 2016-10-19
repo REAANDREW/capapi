@@ -1,4 +1,4 @@
-package main
+package capability
 
 import (
 	"net/http"
@@ -6,6 +6,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
+	"github.com/reaandrew/capapi/core"
 )
 
 type validatePolicy func(policy Policy, request HTTPRequest) bool
@@ -13,7 +14,7 @@ type validatePolicy func(policy Policy, request HTTPRequest) bool
 func validateVerbs(policy Policy, request HTTPRequest) bool {
 	verbs, err := policy.Verbs()
 
-	checkError(err)
+	core.CheckError(err)
 
 	if verbs.Len() == 0 {
 		return true
@@ -21,7 +22,7 @@ func validateVerbs(policy Policy, request HTTPRequest) bool {
 
 	verb, err := request.Verb()
 
-	checkError(err)
+	core.CheckError(err)
 
 	for i := 0; i < verbs.Len(); i++ {
 		scopedVerb, _ := verbs.At(i)
@@ -39,20 +40,20 @@ func validateVerbs(policy Policy, request HTTPRequest) bool {
 
 func validateExactPath(policy Policy, request HTTPRequest) bool {
 	policyPath, err := policy.Path()
-	checkError(err)
+	core.CheckError(err)
 
 	requestPath, err := request.Path()
-	checkError(err)
+	core.CheckError(err)
 
 	return requestPath == policyPath
 }
 
 func validateTemplatedPath(policy Policy, request HTTPRequest) bool {
 	policyPath, err := policy.Path()
-	checkError(err)
+	core.CheckError(err)
 
 	requestPath, err := request.Path()
-	checkError(err)
+	core.CheckError(err)
 
 	r := mux.NewRouter()
 	r.Path(policyPath)
@@ -72,18 +73,18 @@ func validateKeyValues(keyValues KeyValue_List, keyValuePolicies KeyValuePolicy_
 			req := keyValues.At(i)
 
 			reqKey, err := req.Key()
-			checkError(err)
+			core.CheckError(err)
 
 			reqKeyValue, err := req.Value()
-			checkError(err)
+			core.CheckError(err)
 
 			policy := keyValuePolicies.At(i)
 
 			policyKey, err := policy.Key()
-			checkError(err)
+			core.CheckError(err)
 
 			policyValues, err := policy.Values()
-			checkError(err)
+			core.CheckError(err)
 
 			if reqKey == policyKey {
 				if policyValues.Len() == 0 {
@@ -91,7 +92,7 @@ func validateKeyValues(keyValues KeyValue_List, keyValuePolicies KeyValuePolicy_
 				} else {
 					for k := 0; k < policyValues.Len(); k++ {
 						policyKeyValue, err := policyValues.At(k)
-						checkError(err)
+						core.CheckError(err)
 
 						if reqKeyValue == policyKeyValue {
 							valid = true
@@ -112,20 +113,20 @@ func validateKeyValues(keyValues KeyValue_List, keyValuePolicies KeyValuePolicy_
 
 func validateHeaders(policy Policy, request HTTPRequest) bool {
 	reqHeaders, err := request.Headers()
-	checkError(err)
+	core.CheckError(err)
 
 	policyHeaders, err := policy.Headers()
-	checkError(err)
+	core.CheckError(err)
 
 	return validateKeyValues(reqHeaders, policyHeaders)
 }
 
 func validateQuery(policy Policy, request HTTPRequest) bool {
 	reqQuery, err := request.Query()
-	checkError(err)
+	core.CheckError(err)
 
 	policyQuery, err := policy.Query()
-	checkError(err)
+	core.CheckError(err)
 
 	return validateKeyValues(reqQuery, policyQuery)
 }
@@ -135,7 +136,7 @@ func validatePath(policy Policy, request HTTPRequest) bool {
 		validateTemplatedPath(policy, request)
 }
 
-func (instance Policy) validate(request HTTPRequest) bool {
+func (instance Policy) Validate(request HTTPRequest) bool {
 	verbResult := validateVerbs(instance, request)
 	pathResult := validatePath(instance, request)
 	headersResult := validateHeaders(instance, request)

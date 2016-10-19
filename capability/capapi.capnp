@@ -1,7 +1,7 @@
 using Go = import "/go.capnp";
 @0x9041cfd31a197b3f;
-$Go.package("main");
-$Go.import("github.com/reaandrew/cap-based-subscription");
+$Go.package("capability");
+$Go.import("github.com/reaandrew/capapi/capability");
 
 struct HTTPRequest {
     path @0 :Text;
@@ -49,11 +49,11 @@ struct APIKey {
     value @0 :Text;
 }
 
-interface HTTPProxyFactory {
-    getHTTPProxy @0 (key :APIKey) -> (proxy :HTTPProxy);
+interface HTTPProxyFactoryAPI {
+    getHTTPProxy @0 (key :APIKey) -> (proxy :HTTPProxyAPI);
 }
 
-interface HTTPProxy {
+interface HTTPProxyAPI {
     request @0 (requestObj :HTTPRequest) -> (response :HTTPResponse);
     delegate @1 (scope :PolicySet) -> (key :APIKey);
     revoke @2 () -> (result :Bool);

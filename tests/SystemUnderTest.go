@@ -1,7 +1,10 @@
-package main
+package tests
 
 import (
 	"fmt"
+	"github.com/reaandrew/capapi/core"
+	"github.com/reaandrew/capapi/gateway"
+	"github.com/reaandrew/capapi/proxy"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -10,16 +13,16 @@ import (
 )
 
 type SystemUnderTest struct {
-	APIGateway      apiSecurityGateway
+	APIGateway      gateway.ApiSecurityGateway
 	APIGatewayProxy *httptest.Server
 	FakeEndpoint    *httptest.Server
-	KeyStore        keyStore
+	KeyStore        core.KeyStore
 	ResponseBody    string
 	ResponseCode    int
 	ServerListener  net.Listener
 }
 
-func CreateSystemUnderTest(keyStore keyStore) *SystemUnderTest {
+func CreateSystemUnderTest(keyStore core.KeyStore) *SystemUnderTest {
 	instance := &SystemUnderTest{}
 
 	instance.KeyStore = keyStore
@@ -31,40 +34,40 @@ func CreateSystemUnderTest(keyStore keyStore) *SystemUnderTest {
 		fmt.Fprintln(w, expectedResponseBody)
 	}))
 
-	var gatewayProxy = apiSecurityGatewayProxy{
-		upStream: ":12345",
+	var gatewayProxy = proxy.ApiSecurityGatewayProxy{
+		UpStream: ":12345",
 	}
 
-	instance.APIGatewayProxy = httptest.NewUnstartedServer(gatewayProxy.handler())
+	instance.APIGatewayProxy = httptest.NewUnstartedServer(gatewayProxy.Handler())
 
 	return instance
 }
-func (instance *SystemUnderTest) setResponseBody(value string) {
+func (instance *SystemUnderTest) SetResponseBody(value string) {
 	instance.ResponseBody = value
 }
 
-func (instance *SystemUnderTest) setResponseCode(value int) {
+func (instance *SystemUnderTest) SetResponseCode(value int) {
 	instance.ResponseCode = value
 }
 
-func (instance *SystemUnderTest) start() {
+func (instance *SystemUnderTest) Start() {
 	instance.FakeEndpoint.Start()
 	instance.APIGatewayProxy.Start()
 
 	serverListener, err := net.Listen("tcp", ":12345")
 	instance.ServerListener = serverListener
 
-	checkError(err)
+	core.CheckError(err)
 
 	upStreamURL, _ := url.Parse(instance.FakeEndpoint.URL)
-	var gateway = apiSecurityGateway{
-		upStream: *upStreamURL,
-		keyStore: instance.KeyStore,
+	var gateway = gateway.ApiSecurityGateway{
+		UpStream: *upStreamURL,
+		KeyStore: instance.KeyStore,
 	}
-	go gateway.start(serverListener)
+	go gateway.Start(serverListener)
 }
 
-func (instance *SystemUnderTest) stop() {
+func (instance *SystemUnderTest) Stop() {
 	instance.FakeEndpoint.Close()
 	instance.APIGatewayProxy.Close()
 	instance.ServerListener.Close()

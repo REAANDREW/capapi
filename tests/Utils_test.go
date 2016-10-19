@@ -1,10 +1,13 @@
-package main
+package tests
 
 import (
 	"net/http"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	"github.com/reaandrew/capapi/core"
+	caphttp "github.com/reaandrew/capapi/infrastructure/http"
 )
 
 func TestAuthorizationParser(t *testing.T) {
@@ -12,28 +15,28 @@ func TestAuthorizationParser(t *testing.T) {
 
 		Convey("Returns err when not present in the header", func() {
 			req, _ := http.NewRequest("GET", "http://localhost:8080", nil)
-			_, err := parseAuthorization(req)
-			So(err, ShouldEqual, errNoAuthorizationHeader)
+			_, err := caphttp.ParseAuthorization(req)
+			So(err, ShouldEqual, core.ErrNoAuthorizationHeader)
 		})
 
 		Convey("Returns err when does not contain Bearer", func() {
 			req, _ := http.NewRequest("GET", "http://localhost:8080", nil)
 			req.Header.Set("Authorization", "something")
-			_, err := parseAuthorization(req)
-			So(err, ShouldEqual, errMalformedAuthorizationHeader)
+			_, err := caphttp.ParseAuthorization(req)
+			So(err, ShouldEqual, core.ErrMalformedAuthorizationHeader)
 		})
 
 		Convey("Returns err when does not contain value", func() {
 			req, _ := http.NewRequest("GET", "http://localhost:8080", nil)
 			req.Header.Set("Authorization", "Bearer")
-			_, err := parseAuthorization(req)
-			So(err, ShouldEqual, errNoAPIKey)
+			_, err := caphttp.ParseAuthorization(req)
+			So(err, ShouldEqual, core.ErrNoAPIKey)
 		})
 
 		Convey("Returns API Key", func() {
 			req, _ := http.NewRequest("GET", "http://localhost:8080", nil)
 			req.Header.Set("Authorization", "Bearer 1234")
-			apiKey, _ := parseAuthorization(req)
+			apiKey, _ := caphttp.ParseAuthorization(req)
 			So(apiKey, ShouldEqual, "1234")
 		})
 	})

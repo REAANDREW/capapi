@@ -1,4 +1,4 @@
-package main
+package capability
 
 import capnp "zombiezen.com/go/capnproto2"
 
@@ -9,7 +9,7 @@ type PolicyBuilder struct {
 	Query   map[string][]string
 }
 
-func newPolicyBuilder() PolicyBuilder {
+func NewPolicyBuilder() PolicyBuilder {
 	return PolicyBuilder{
 		Verbs:   []string{},
 		Headers: map[string][]string{},
@@ -17,7 +17,7 @@ func newPolicyBuilder() PolicyBuilder {
 	}
 }
 
-func (instance PolicyBuilder) withVerb(verb string) PolicyBuilder {
+func (instance PolicyBuilder) WithVerb(verb string) PolicyBuilder {
 	return PolicyBuilder{
 		Path:    instance.Path,
 		Verbs:   append(instance.Verbs, verb),
@@ -26,7 +26,7 @@ func (instance PolicyBuilder) withVerb(verb string) PolicyBuilder {
 	}
 }
 
-func (instance PolicyBuilder) build(seg *capnp.Segment) Policy {
+func (instance PolicyBuilder) Build(seg *capnp.Segment) Policy {
 	policy, _ := NewPolicy(seg)
 
 	verbList, _ := capnp.NewTextList(seg, int32(len(instance.Verbs)))
