@@ -10,7 +10,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
-	capnp "zombiezen.com/go/capnproto2"
 )
 
 /*
@@ -22,31 +21,9 @@ WIN, WIN, WIN, WIN!!
 
 */
 
-const key = "unsecure_key_number_1"
-
 func CreateKeyStore() KeyStore {
-	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
-
-	policySet, _ := NewRootPolicySet(seg)
-
-	policyList, _ := NewPolicy_List(seg, 1)
-
-	policy, _ := NewPolicy(seg)
-
-	textList, _ := capnp.NewTextList(seg, 0)
-
-	policy.SetVerbs(textList)
-
-	policyList.Set(0, policy)
-
-	policySet.SetPolicies(policyList)
-
-	byteValue, _ := msg.Marshal()
-
 	keyStore := InProcessKeyStore{
-		Keys: map[string][]byte{
-			key: byteValue,
-		},
+		Keys: map[string][]byte{},
 	}
 
 	return keyStore
@@ -65,16 +42,20 @@ func TestCapapi(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("API Call", t, func() {
-		Convey("with unrestricted access", func() {
-			var keystore = CreateKeyStore()
-			var sut = CreateSystemUnderTest(keystore)
-			var expectedResponseBody = "You Made It Baby, Yeh!"
-			var expectedResponseCode = 200
+		var keystore = CreateKeyStore()
+		var sut = CreateSystemUnderTest(keystore)
+		var expectedResponseBody = "You Made It Baby, Yeh!"
+		var expectedResponseCode = 200
 
-			sut.SetResponseBody(expectedResponseBody)
-			sut.SetResponseCode(expectedResponseCode)
-			defer sut.Stop()
-			sut.Start()
+		sut.SetResponseBody(expectedResponseBody)
+		sut.SetResponseCode(expectedResponseCode)
+		defer sut.Stop()
+		sut.Start()
+
+		Convey("with unrestricted access", func() {
+			key, bytes := NewPolicySetBuilder().Build()
+			keystore.Set(key, bytes)
+
 			client := &http.Client{}
 			req, _ := http.NewRequest("GET", sut.APIGatewayProxy.URL, nil)
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
@@ -87,15 +68,6 @@ func TestCapapi(t *testing.T) {
 		})
 
 		Convey("with port policy", func() {
-			var keystore = CreateKeyStore()
-			var sut = CreateSystemUnderTest(keystore)
-			var expectedResponseBody = "You Made It Baby, Yeh!"
-			var expectedResponseCode = 200
-
-			sut.SetResponseBody(expectedResponseBody)
-			sut.SetResponseCode(expectedResponseCode)
-			defer sut.Stop()
-			sut.Start()
 
 			key, bytes := NewPolicySetBuilder().
 				WithPolicy(NewPolicyBuilder().WithVerb("PUT")).

@@ -1,39 +1,37 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"os"
-	"strings"
 )
 
 var (
-	app      = kingpin.New("chat", "A command-line chat application.")
+	app      = kingpin.New("capapi", "Object Capability Based HTTP API Security Gateway")
 	debug    = app.Flag("debug", "Enable debug mode.").Bool()
 	serverIP = app.Flag("server", "Server address.").Default("127.0.0.1").IP()
 
-	register     = app.Command("register", "Register a new user.")
-	registerNick = register.Arg("nick", "Nickname for user.").Required().String()
-	registerName = register.Arg("name", "Name of user.").Required().String()
+	gateway         = app.Command("gateway", "Start a new gateway")
+	gatewayUpstream = gateway.Flag("upstream", "The upstream API").Required().String()
 
-	post        = app.Command("post", "Post a message to a channel.")
-	postImage   = post.Flag("image", "Image to post.").File()
-	postChannel = post.Arg("channel", "Channel to post to.").Required().String()
-	postText    = post.Arg("text", "Text to post.").Strings()
+	proxy        = app.Command("http-proxy", "Start a new gateway http proxy")
+	proxyHost    = proxy.Flag("proxy-host", "The hostname for the proxy").Strings()
+	proxyPort    = proxy.Flag("proxy-port", "The port for the proxy").Strings()
+	upstreamHost = proxy.Flag("upstream-host", "The hostname for the upstream gateway").Strings()
+	upstreamPort = proxy.Flag("upstream-port", "The port for the upstream gateway").Strings()
 )
 
 func main() {
 	log.SetLevel(log.ErrorLevel)
-	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
-	// Register user
-	case register.FullCommand():
-		println(*registerNick)
 
-		// Post message
-	case post.FullCommand():
-		if *postImage != nil {
-		}
-		text := strings.Join(*postText, " ")
-		println("Post:", text)
+	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
+
+	case gateway.FullCommand():
+		fmt.Println("You are running a server")
+
+	case proxy.FullCommand():
+		fmt.Println("You are running a proxy")
 	}
 }
