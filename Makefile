@@ -15,8 +15,4 @@ build:
 test:
 	(cd tests && go test -v ./...)
 
-install: capnproto
-	go get -t ./...
-
-
 .PHONY: capnproto build test install
