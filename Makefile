@@ -13,6 +13,6 @@ build:
 	go build
 
 test:
-	(cd tests && go test -v ./...)
+	go test -v ./...
 
 .PHONY: capnproto build test
