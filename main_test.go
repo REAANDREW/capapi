@@ -77,9 +77,7 @@ func TestCapapi(t *testing.T) {
 
 			Convey("must succeed", func() {
 				client := &http.Client{}
-				log.WithFields(log.Fields{
-					"url": sut.APIGatewayProxy.URL,
-				}).Info("API Gateway Proxy URL")
+
 				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 				resp, err := client.Do(req)
@@ -95,10 +93,57 @@ func TestCapapi(t *testing.T) {
 
 			Convey("must fail", func() {
 				client := &http.Client{}
-				log.WithFields(log.Fields{
-					"url": sut.APIGatewayProxy.URL,
-				}).Info("API Gateway Proxy URL")
 				req, _ := http.NewRequest("POST", sut.APIGatewayProxy.URL, nil)
+
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Error(err)
+				}
+				defer resp.Body.Close()
+				body, _ := ioutil.ReadAll(resp.Body)
+
+				So(resp.StatusCode, ShouldEqual, 401)
+				So(strings.Trim(string(body), "\n"), ShouldEqual, "")
+			})
+		})
+
+		Convey("with exact path policy", func() {
+			okPath := "/some/path"
+
+			key, bytes := NewPolicySetBuilder().
+				WithPolicy(NewPolicyBuilder().WithPath(okPath)).
+				Build()
+
+			keystore.Set(key, bytes)
+
+			Convey("must succeed", func() {
+				client := &http.Client{}
+
+				exactPath := sut.APIGatewayProxy.URL + okPath
+
+				req, _ := http.NewRequest("PUT", exactPath, nil)
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Error(err)
+				}
+				defer resp.Body.Close()
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					panic(err)
+				}
+
+				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
+			})
+
+			Convey("must fail", func() {
+				client := &http.Client{}
+
+				exactPath := sut.APIGatewayProxy.URL + "/someother/path"
+				req, _ := http.NewRequest("POST", exactPath, nil)
+
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 				resp, err := client.Do(req)
 				if err != nil {

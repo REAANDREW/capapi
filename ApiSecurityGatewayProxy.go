@@ -29,7 +29,8 @@ func (instance ApiSecurityGatewayProxy) Handler() http.HandlerFunc {
 		c, _ := net.Dial("tcp", instance.UpStream)
 		defer c.Close()
 
-		conn := rpc.NewConn(rpc.StreamTransport(c))
+		conn := rpc.NewConn(rpc.StreamTransport(c), rpc.ConnLog(nil))
+		defer conn.Close()
 
 		ctx := context.Background()
 		factory := HTTPProxyFactoryAPI{Client: conn.Bootstrap(ctx)}
@@ -59,6 +60,7 @@ func (instance ApiSecurityGatewayProxy) Handler() http.HandlerFunc {
 			}
 			request, _ := NewHTTPRequest(seg)
 			request.SetVerb(r.Method)
+			request.SetPath(r.URL.Path)
 			return p.SetRequestObj(request)
 		}).Response()
 

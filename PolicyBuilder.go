@@ -17,6 +17,15 @@ func NewPolicyBuilder() PolicyBuilder {
 	}
 }
 
+func (instance PolicyBuilder) WithPath(path string) PolicyBuilder {
+	return PolicyBuilder{
+		Path:    path,
+		Verbs:   instance.Verbs,
+		Headers: instance.Headers,
+		Query:   instance.Query,
+	}
+}
+
 func (instance PolicyBuilder) WithVerb(verb string) PolicyBuilder {
 	return PolicyBuilder{
 		Path:    instance.Path,
@@ -68,6 +77,8 @@ func (instance PolicyBuilder) Build(seg *capnp.Segment) Policy {
 		count++
 	}
 	policy.SetQuery(queryList)
+
+	policy.SetPath(instance.Path)
 
 	return policy
 }

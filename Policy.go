@@ -44,7 +44,7 @@ func validateExactPath(policy Policy, request HTTPRequest) bool {
 	requestPath, err := request.Path()
 	CheckError(err)
 
-	return requestPath == policyPath
+	return policyPath == "" || requestPath == policyPath
 }
 
 func validateTemplatedPath(policy Policy, request HTTPRequest) bool {

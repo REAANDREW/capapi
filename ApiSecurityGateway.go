@@ -18,6 +18,8 @@ type ApiSecurityGateway struct {
 	KeyStore KeyStore
 }
 
+var abort = rpc.Abort{}
+
 func (instance ApiSecurityGateway) Start(listener net.Listener) {
 	for {
 		if c, err := listener.Accept(); err == nil {
@@ -26,9 +28,10 @@ func (instance ApiSecurityGateway) Start(listener net.Listener) {
 					KeyStore: instance.KeyStore,
 					UpStream: instance.UpStream,
 				})
-				conn := rpc.NewConn(rpc.StreamTransport(c), rpc.MainInterface(main.Client))
+				conn := rpc.NewConn(rpc.StreamTransport(c), rpc.MainInterface(main.Client), rpc.ConnLog(nil))
+
 				err := conn.Wait()
-				if err != nil && err != io.EOF {
+				if err != nil && err != io.EOF && err.Error() != "rpc: aborted by remote: rpc: shutdown" {
 					log.Error(err)
 				}
 			}()
