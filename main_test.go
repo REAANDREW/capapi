@@ -302,6 +302,26 @@ func TestCapapi(t *testing.T) {
 				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
 			})
+
+			Convey("must fail with no query string", func() {
+				client := &http.Client{}
+
+				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Error(err)
+				}
+				defer resp.Body.Close()
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					panic(err)
+				}
+
+				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
+			})
 		})
 	})
 }
