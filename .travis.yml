@@ -1,13 +1,13 @@
 language: go
 go:
-- 1.7.1
-- tip
+    - 1.7.1
+    - tip
 env:
   global:
-  - CC=gcc-4.8
-  - CXX=g++-4.8
-  - export PATH="$PATH:$HOME/bin"
-  - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/lib"
+      - CC=gcc-4.8
+      - CXX=g++-4.8
+      - export PATH="$PATH:$HOME/bin"
+      - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/lib"
 addons:
   apt:
     sources:
@@ -16,19 +16,7 @@ addons:
     - gcc-4.8
     - g++-4.8
 install:
-- make capnproto
+    - make capnproto
 script:
-- make build
-- make test
-deploy:
-  provider: releases
-  api_key:
-    secure: AiREMI9PSZkh0VWeQZfH0KpfILsA6Jkw8vM1RPmiJY7wF5t3/i5t+Lh5yrsykOTxCgewJP1HuEEGa3uno2lNhaeb+PQIoayBrHBasBBYpWD+f9Jto3p7QZ3oxq2XiCblPy01+hTf98MtefwF1DNNI9K9EhP+PL96Eel4Gjy7p4mn2j3j3rA2hn5fC20jGk53rAbUgm6Smgla4K7skhVZQ+hw8bUHmkh1A9fG/bkUyEWeKU4ONnb8eh/MEDO9eFYcx4d4FU9PS/tIB7b3Lzz/7YOIVd9auFgE2kQZ+SNKtnhTZ04DUg07ZfLoIT5RqLHY1Sc6qG5f0gcOj0dnJ47TmweIeCuMjmT5eb9Z1yE+rLCHyu0FPcr3WbEiRIdcpu0px488hzYyVjQo2jcqCg2i2i5/dM505kq31xAd1OJ/Y9IIUUIksnlOtW+n+6NOQ0Lu0QGGyQscNk2/ciicktbO7BPuZD9mi3DrvZqCc4Ou/gJdiuaR4YD5D9mg9hdfDMhYoNpm2TpLkdNwj2Y4+UMfWLIbU9s3Y2boCif+7p90GGee/Cw7G1cfpmOqO8x/zIrfmcYUGWZJu80/0wHs5bw6DFqfOsIji7PqQp7b0PraN4FoiLlDcwzdfGe6lSDsrzZ2HGQTapgBlzudqwROBnBAlpcZpY72z2i2rPOg7UcIrjw=
-  file:
-      - release/capapi-linux-amd64
-      - release/capapi-linux-386
-      - release/capapi-windows-amd64
-      - release/capapi-windows-386
-  on:
-    repo: REAANDREW/capapi
-    tags: true
+    - make build
+    - make test

@@ -253,5 +253,55 @@ func TestCapapi(t *testing.T) {
 				So(strings.Trim(string(body), "\n"), ShouldEqual, "")
 			})
 		})
+
+		Convey("with a querystring policy", func() {
+			key, bytes := NewPolicySetBuilder().
+				WithPolicy(NewPolicyBuilder().WithQuery("a", []string{})).
+				Build()
+
+			keystore.Set(key, bytes)
+
+			Convey("must succeed", func() {
+				client := &http.Client{}
+
+				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+				req.URL.Query().Add("a", "1")
+
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Error(err)
+				}
+				defer resp.Body.Close()
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					panic(err)
+				}
+
+				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
+			})
+
+			Convey("must fail", func() {
+				client := &http.Client{}
+
+				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+				req.URL.Query().Add("b", "1")
+
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Error(err)
+				}
+				defer resp.Body.Close()
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					panic(err)
+				}
+
+				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
+			})
+		})
 	})
 }
