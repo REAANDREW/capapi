@@ -1,6 +1,4 @@
-package inproc
-
-import "github.com/reaandrew/capapi/core"
+package main
 
 type InProcessKeyStore struct {
 	Keys map[string][]byte
@@ -12,7 +10,7 @@ func (instance InProcessKeyStore) Set(key string, scope []byte) {
 
 func (instance InProcessKeyStore) Get(key string) ([]byte, error) {
 	if _, ok := instance.Keys[key]; !ok {
-		return []byte{}, core.ErrAPIKeyNotFound
+		return []byte{}, ErrAPIKeyNotFound
 	}
 	return instance.Keys[key], nil
 }

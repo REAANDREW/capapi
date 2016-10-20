@@ -1,20 +1,17 @@
-package gateway
+package main
 
 import (
 	"net/url"
 
 	capnp "zombiezen.com/go/capnproto2"
-
-	"github.com/reaandrew/capapi/capability"
-	"github.com/reaandrew/capapi/core"
 )
 
 type HTTPProxyFactory struct {
-	KeyStore core.KeyStore
+	KeyStore KeyStore
 	UpStream url.URL
 }
 
-func (instance HTTPProxyFactory) GetHTTPProxy(call capability.HTTPProxyFactoryAPI_getHTTPProxy) error {
+func (instance HTTPProxyFactory) GetHTTPProxy(call HTTPProxyFactoryAPI_getHTTPProxy) error {
 	apiKey, _ := call.Params.Key()
 	apiKeyValue, _ := apiKey.Value()
 
@@ -25,9 +22,9 @@ func (instance HTTPProxyFactory) GetHTTPProxy(call capability.HTTPProxyFactoryAP
 	}
 
 	msg, _ := capnp.Unmarshal(bytesValue)
-	scope, _ := capability.ReadRootPolicySet(msg)
+	scope, _ := ReadRootPolicySet(msg)
 
-	server := capability.HTTPProxyAPI_ServerToClient(HttpProxy{
+	server := HTTPProxyAPI_ServerToClient(HttpProxy{
 		APIKey:   apiKey,
 		scope:    scope,
 		upStream: instance.UpStream,

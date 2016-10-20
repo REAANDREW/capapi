@@ -1,4 +1,4 @@
-package core
+package main
 
 type KeyStore interface {
 	Set(key string, scope []byte)

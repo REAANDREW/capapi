@@ -1,4 +1,4 @@
-package capability
+package main
 
 func (instance PolicySet) Validate(request HTTPRequest) bool {
 	policies, err := instance.Policies()

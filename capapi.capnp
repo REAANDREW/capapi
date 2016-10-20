@@ -1,7 +1,7 @@
 using Go = import "/go.capnp";
 @0x9041cfd31a197b3f;
-$Go.package("capability");
-$Go.import("github.com/reaandrew/capapi/capability");
+$Go.package("main");
+$Go.import("github.com/reaandrew/capapi");
 
 struct HTTPRequest {
     path @0 :Text;

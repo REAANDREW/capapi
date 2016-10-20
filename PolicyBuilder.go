@@ -1,4 +1,4 @@
-package capability
+package main
 
 import capnp "zombiezen.com/go/capnproto2"
 

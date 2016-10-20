@@ -1,4 +1,4 @@
-package tests
+package main
 
 import (
 	"net/http"
@@ -8,7 +8,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
-	"github.com/reaandrew/capapi/capability"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -37,11 +36,11 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request path does not match the policy exact path", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
 					policy.SetPath("/some/path")
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
 					request.SetPath("/some/other/path")
 
@@ -50,11 +49,11 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request path does not match the policy templated path", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
 					policy.SetPath("/some/path/{id:(1|2)}")
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
 					request.SetPath("/some/path/3")
 
@@ -64,7 +63,7 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request verb does not match a single policy verb", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
 					verbs, _ := capnp.NewTextList(seg, 1)
 
@@ -72,7 +71,7 @@ func TestPolicy(t *testing.T) {
 
 					policy.SetVerbs(verbs)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
 					request.SetVerb("GET")
 
@@ -81,7 +80,7 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request verb does not match a any policy verbs", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
 					verbs, _ := capnp.NewTextList(seg, 2)
 
@@ -90,7 +89,7 @@ func TestPolicy(t *testing.T) {
 
 					policy.SetVerbs(verbs)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
 					request.SetVerb("GET")
 
@@ -99,19 +98,19 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request has a header key which is not present in the header policy", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
-					headerList, _ := capability.NewKeyValuePolicy_List(seg, 1)
-					keyValuePolicy, _ := capability.NewKeyValuePolicy(seg)
+					headerList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
 					keyValuePolicy.SetKey("A")
 					headerList.Set(0, keyValuePolicy)
 
 					policy.SetHeaders(headerList)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
-					headers, _ := capability.NewKeyValue_List(seg, 1)
-					keyValue, _ := capability.NewKeyValue(seg)
+					headers, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
 					keyValue.SetKey("B")
 					headers.Set(0, keyValue)
 
@@ -122,10 +121,10 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request has a header value which does not match a header policy value for the specified key", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
-					headerList, _ := capability.NewKeyValuePolicy_List(seg, 1)
-					keyValuePolicy, _ := capability.NewKeyValuePolicy(seg)
+					headerList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
 					keyValuePolicy.SetKey("X-Client")
 
 					valuesList, _ := capnp.NewTextList(seg, 3)
@@ -139,10 +138,10 @@ func TestPolicy(t *testing.T) {
 
 					policy.SetHeaders(headerList)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
-					headers, _ := capability.NewKeyValue_List(seg, 1)
-					keyValue, _ := capability.NewKeyValue(seg)
+					headers, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
 					keyValue.SetKey("X-Client")
 					keyValue.SetValue("4")
 					headers.Set(0, keyValue)
@@ -154,19 +153,19 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request has a query string key which is not present in the query policy", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
-					queryList, _ := capability.NewKeyValuePolicy_List(seg, 1)
-					keyValuePolicy, _ := capability.NewKeyValuePolicy(seg)
+					queryList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
 					keyValuePolicy.SetKey("A")
 					queryList.Set(0, keyValuePolicy)
 
 					policy.SetQuery(queryList)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
-					query, _ := capability.NewKeyValue_List(seg, 1)
-					keyValue, _ := capability.NewKeyValue(seg)
+					query, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
 					keyValue.SetKey("B")
 					keyValue.SetValue("1")
 					query.Set(0, keyValue)
@@ -178,10 +177,10 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request has a query value which does not match a query policy value for the specified key", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
-					queryList, _ := capability.NewKeyValuePolicy_List(seg, 1)
-					keyValuePolicy, _ := capability.NewKeyValuePolicy(seg)
+					queryList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
 					keyValuePolicy.SetKey("X-Client")
 
 					valuesList, _ := capnp.NewTextList(seg, 3)
@@ -195,10 +194,10 @@ func TestPolicy(t *testing.T) {
 
 					policy.SetQuery(queryList)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
-					query, _ := capability.NewKeyValue_List(seg, 1)
-					keyValue, _ := capability.NewKeyValue(seg)
+					query, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
 					keyValue.SetKey("X-Client")
 					keyValue.SetValue("4")
 					query.Set(0, keyValue)
@@ -213,11 +212,11 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request path does match the policy exact path", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
 					policy.SetPath("/some/path")
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
 					request.SetPath("/some/path")
 
@@ -226,11 +225,11 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request path does match the policy templated path", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
 					policy.SetPath("/some/path/{id:(1|2)}")
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
 					request.SetPath("/some/path/1")
 
@@ -240,7 +239,7 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request verb does match a single policy verb", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
 					verbs, _ := capnp.NewTextList(seg, 1)
 
@@ -248,7 +247,7 @@ func TestPolicy(t *testing.T) {
 
 					policy.SetVerbs(verbs)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
 					request.SetVerb("PUT")
 
@@ -257,7 +256,7 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request verb does match one of many policy verbs", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
 					verbs, _ := capnp.NewTextList(seg, 2)
 
@@ -266,7 +265,7 @@ func TestPolicy(t *testing.T) {
 
 					policy.SetVerbs(verbs)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
 					request.SetVerb("PUT")
 
@@ -275,19 +274,19 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request has a header key which is present in the header policy", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
-					headerList, _ := capability.NewKeyValuePolicy_List(seg, 1)
-					keyValuePolicy, _ := capability.NewKeyValuePolicy(seg)
+					headerList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
 					keyValuePolicy.SetKey("A")
 					headerList.Set(0, keyValuePolicy)
 
 					policy.SetHeaders(headerList)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
-					headers, _ := capability.NewKeyValue_List(seg, 1)
-					keyValue, _ := capability.NewKeyValue(seg)
+					headers, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
 					keyValue.SetKey("A")
 					headers.Set(0, keyValue)
 
@@ -298,10 +297,10 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request has a header value which does match a header policy value for the specified key", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
-					headerList, _ := capability.NewKeyValuePolicy_List(seg, 1)
-					keyValuePolicy, _ := capability.NewKeyValuePolicy(seg)
+					headerList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
 					keyValuePolicy.SetKey("X-Client")
 
 					valuesList, _ := capnp.NewTextList(seg, 3)
@@ -315,10 +314,10 @@ func TestPolicy(t *testing.T) {
 
 					policy.SetHeaders(headerList)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
-					headers, _ := capability.NewKeyValue_List(seg, 1)
-					keyValue, _ := capability.NewKeyValue(seg)
+					headers, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
 					keyValue.SetKey("X-Client")
 					keyValue.SetValue("3")
 					headers.Set(0, keyValue)
@@ -330,19 +329,19 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request has a query string key which is present in the query policy", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
-					queryList, _ := capability.NewKeyValuePolicy_List(seg, 1)
-					keyValuePolicy, _ := capability.NewKeyValuePolicy(seg)
+					queryList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
 					keyValuePolicy.SetKey("A")
 					queryList.Set(0, keyValuePolicy)
 
 					policy.SetQuery(queryList)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
-					query, _ := capability.NewKeyValue_List(seg, 1)
-					keyValue, _ := capability.NewKeyValue(seg)
+					query, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
 					keyValue.SetKey("A")
 					keyValue.SetValue("1")
 					query.Set(0, keyValue)
@@ -354,10 +353,10 @@ func TestPolicy(t *testing.T) {
 				Convey("when the request has a query value which does match a query policy value for the specified key", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-					policy, _ := capability.NewPolicy(seg)
+					policy, _ := NewPolicy(seg)
 
-					queryList, _ := capability.NewKeyValuePolicy_List(seg, 1)
-					keyValuePolicy, _ := capability.NewKeyValuePolicy(seg)
+					queryList, _ := NewKeyValuePolicy_List(seg, 1)
+					keyValuePolicy, _ := NewKeyValuePolicy(seg)
 					keyValuePolicy.SetKey("X-Client")
 
 					valuesList, _ := capnp.NewTextList(seg, 3)
@@ -371,10 +370,10 @@ func TestPolicy(t *testing.T) {
 
 					policy.SetQuery(queryList)
 
-					request, _ := capability.NewHTTPRequest(seg)
+					request, _ := NewHTTPRequest(seg)
 
-					query, _ := capability.NewKeyValue_List(seg, 1)
-					keyValue, _ := capability.NewKeyValue(seg)
+					query, _ := NewKeyValue_List(seg, 1)
+					keyValue, _ := NewKeyValue(seg)
 					keyValue.SetKey("X-Client")
 					keyValue.SetValue("3")
 					query.Set(0, keyValue)

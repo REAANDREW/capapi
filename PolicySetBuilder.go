@@ -1,4 +1,4 @@
-package capability
+package main
 
 import (
 	"crypto/rand"
@@ -6,8 +6,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	capnp "zombiezen.com/go/capnproto2"
-
-	"github.com/reaandrew/capapi/core"
 )
 
 type PolicySetBuilder struct {
@@ -36,7 +34,7 @@ func (instance PolicySetBuilder) Build() (string, []byte) {
 	byteValue, _ := msg.Marshal()
 	keyBytes := make([]byte, 64)
 	_, err := rand.Read(keyBytes)
-	core.CheckError(err)
+	CheckError(err)
 
 	key := base64.StdEncoding.EncodeToString(keyBytes)
 	log.WithFields(log.Fields{

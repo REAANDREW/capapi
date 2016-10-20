@@ -1,10 +1,7 @@
-package tests
+package main
 
 import (
 	"fmt"
-	"github.com/reaandrew/capapi/core"
-	"github.com/reaandrew/capapi/gateway"
-	"github.com/reaandrew/capapi/proxy"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -13,16 +10,16 @@ import (
 )
 
 type SystemUnderTest struct {
-	APIGateway      gateway.ApiSecurityGateway
+	APIGateway      ApiSecurityGateway
 	APIGatewayProxy *httptest.Server
 	FakeEndpoint    *httptest.Server
-	KeyStore        core.KeyStore
+	KeyStore        KeyStore
 	ResponseBody    string
 	ResponseCode    int
 	ServerListener  net.Listener
 }
 
-func CreateSystemUnderTest(keyStore core.KeyStore) *SystemUnderTest {
+func CreateSystemUnderTest(keyStore KeyStore) *SystemUnderTest {
 	instance := &SystemUnderTest{}
 
 	instance.KeyStore = keyStore
@@ -34,7 +31,7 @@ func CreateSystemUnderTest(keyStore core.KeyStore) *SystemUnderTest {
 		fmt.Fprintln(w, expectedResponseBody)
 	}))
 
-	var gatewayProxy = proxy.ApiSecurityGatewayProxy{
+	var gatewayProxy = ApiSecurityGatewayProxy{
 		UpStream: ":12345",
 	}
 
@@ -57,10 +54,10 @@ func (instance *SystemUnderTest) Start() {
 	serverListener, err := net.Listen("tcp", ":12345")
 	instance.ServerListener = serverListener
 
-	core.CheckError(err)
+	CheckError(err)
 
 	upStreamURL, _ := url.Parse(instance.FakeEndpoint.URL)
-	var gateway = gateway.ApiSecurityGateway{
+	var gateway = ApiSecurityGateway{
 		UpStream: *upStreamURL,
 		KeyStore: instance.KeyStore,
 	}

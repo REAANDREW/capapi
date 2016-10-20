@@ -1,4 +1,4 @@
-package gateway
+package main
 
 import (
 	"io"
@@ -8,9 +8,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 
 	"zombiezen.com/go/capnproto2/rpc"
-
-	"github.com/reaandrew/capapi/capability"
-	"github.com/reaandrew/capapi/core"
 )
 
 //LOOKING TO MOVE TO https://github.com/hashicorp/yamux
@@ -18,14 +15,14 @@ import (
 
 type ApiSecurityGateway struct {
 	UpStream url.URL
-	KeyStore core.KeyStore
+	KeyStore KeyStore
 }
 
 func (instance ApiSecurityGateway) Start(listener net.Listener) {
 	for {
 		if c, err := listener.Accept(); err == nil {
 			go func() {
-				main := capability.HTTPProxyFactoryAPI_ServerToClient(HTTPProxyFactory{
+				main := HTTPProxyFactoryAPI_ServerToClient(HTTPProxyFactory{
 					KeyStore: instance.KeyStore,
 					UpStream: instance.UpStream,
 				})

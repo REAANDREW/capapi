@@ -1,4 +1,4 @@
-package gateway
+package main
 
 import (
 	"io/ioutil"
@@ -6,22 +6,20 @@ import (
 	"net/url"
 
 	capnp "zombiezen.com/go/capnproto2"
-
-	"github.com/reaandrew/capapi/capability"
 )
 
 type HttpProxy struct {
-	APIKey   capability.APIKey
-	scope    capability.PolicySet
+	APIKey   APIKey
+	scope    PolicySet
 	upStream url.URL
 }
 
-func (instance HttpProxy) Request(call capability.HTTPProxyAPI_request) error {
+func (instance HttpProxy) Request(call HTTPProxyAPI_request) error {
 
 	req, _ := call.Params.RequestObj()
 
 	_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
-	response, _ := capability.NewHTTPResponse(seg)
+	response, _ := NewHTTPResponse(seg)
 
 	if !instance.scope.Validate(req) {
 		response.SetStatus(401)
@@ -40,17 +38,17 @@ func (instance HttpProxy) Request(call capability.HTTPProxyAPI_request) error {
 	return call.Results.SetResponse(response)
 }
 
-func (instance HttpProxy) Delegate(call capability.HTTPProxyAPI_delegate) error {
+func (instance HttpProxy) Delegate(call HTTPProxyAPI_delegate) error {
 	//scope, _ := call.Params.Scope()
 
 	_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-	key, _ := capability.NewAPIKey(seg)
+	key, _ := NewAPIKey(seg)
 	key.SetValue("You Key, Sir!")
 	return call.Results.SetKey(key)
 }
 
-func (instance HttpProxy) Revoke(call capability.HTTPProxyAPI_revoke) error {
+func (instance HttpProxy) Revoke(call HTTPProxyAPI_revoke) error {
 	call.Results.SetResult(false)
 	return nil
 }

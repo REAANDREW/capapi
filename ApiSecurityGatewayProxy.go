@@ -1,4 +1,4 @@
-package proxy
+package main
 
 import (
 	"context"
@@ -10,8 +10,6 @@ import (
 	"zombiezen.com/go/capnproto2/rpc"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/reaandrew/capapi/capability"
-	caphttp "github.com/reaandrew/capapi/infrastructure/http"
 )
 
 type ApiSecurityGatewayProxy struct {
@@ -21,7 +19,7 @@ type ApiSecurityGatewayProxy struct {
 func (instance ApiSecurityGatewayProxy) Handler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-CAPAPI", "1")
-		apiKeyValue, err := caphttp.ParseAuthorization(r)
+		apiKeyValue, err := ParseAuthorization(r)
 
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -34,14 +32,14 @@ func (instance ApiSecurityGatewayProxy) Handler() http.HandlerFunc {
 		conn := rpc.NewConn(rpc.StreamTransport(c))
 
 		ctx := context.Background()
-		factory := capability.HTTPProxyFactoryAPI{Client: conn.Bootstrap(ctx)}
+		factory := HTTPProxyFactoryAPI{Client: conn.Bootstrap(ctx)}
 
 		_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-		apiKeyObj, _ := capability.NewAPIKey(seg)
+		apiKeyObj, _ := NewAPIKey(seg)
 		apiKeyObj.SetValue(apiKeyValue)
 
-		proxyResult, err := factory.GetHTTPProxy(ctx, func(p capability.HTTPProxyFactoryAPI_getHTTPProxy_Params) error {
+		proxyResult, err := factory.GetHTTPProxy(ctx, func(p HTTPProxyFactoryAPI_getHTTPProxy_Params) error {
 			return p.SetKey(apiKeyObj)
 		}).Struct()
 
@@ -54,12 +52,12 @@ func (instance ApiSecurityGatewayProxy) Handler() http.HandlerFunc {
 
 		proxy := proxyResult.Proxy()
 
-		result := proxy.Request(ctx, func(p capability.HTTPProxyAPI_request_Params) error {
+		result := proxy.Request(ctx, func(p HTTPProxyAPI_request_Params) error {
 			_, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
 			if err != nil {
 				panic(err)
 			}
-			request, _ := capability.NewHTTPRequest(seg)
+			request, _ := NewHTTPRequest(seg)
 			request.SetVerb(r.Method)
 			return p.SetRequestObj(request)
 		}).Response()

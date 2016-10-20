@@ -1,4 +1,4 @@
-package tests
+package main
 
 import (
 	"fmt"
@@ -9,12 +9,8 @@ import (
 	"testing"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/reaandrew/capapi/capability"
-	"github.com/reaandrew/capapi/infrastructure/inproc"
 	. "github.com/smartystreets/goconvey/convey"
 	capnp "zombiezen.com/go/capnproto2"
-
-	"github.com/reaandrew/capapi/core"
 )
 
 /*
@@ -28,14 +24,14 @@ WIN, WIN, WIN, WIN!!
 
 const key = "unsecure_key_number_1"
 
-func CreateKeyStore() core.KeyStore {
+func CreateKeyStore() KeyStore {
 	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-	policySet, _ := capability.NewRootPolicySet(seg)
+	policySet, _ := NewRootPolicySet(seg)
 
-	policyList, _ := capability.NewPolicy_List(seg, 1)
+	policyList, _ := NewPolicy_List(seg, 1)
 
-	policy, _ := capability.NewPolicy(seg)
+	policy, _ := NewPolicy(seg)
 
 	textList, _ := capnp.NewTextList(seg, 0)
 
@@ -47,7 +43,7 @@ func CreateKeyStore() core.KeyStore {
 
 	byteValue, _ := msg.Marshal()
 
-	keyStore := inproc.InProcessKeyStore{
+	keyStore := InProcessKeyStore{
 		Keys: map[string][]byte{
 			key: byteValue,
 		},
@@ -101,8 +97,8 @@ func TestCapapi(t *testing.T) {
 			defer sut.Stop()
 			sut.Start()
 
-			key, bytes := capability.NewPolicySetBuilder().
-				WithPolicy(capability.NewPolicyBuilder().WithVerb("PUT")).
+			key, bytes := NewPolicySetBuilder().
+				WithPolicy(NewPolicyBuilder().WithVerb("PUT")).
 				Build()
 
 			keystore.Set(key, bytes)
