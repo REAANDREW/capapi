@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 
 	capnp "zombiezen.com/go/capnproto2"
 	"zombiezen.com/go/capnproto2/rpc"
@@ -61,6 +62,26 @@ func (instance ApiSecurityGatewayProxy) Handler() http.HandlerFunc {
 			request, _ := NewHTTPRequest(seg)
 			request.SetVerb(r.Method)
 			request.SetPath(r.URL.Path)
+
+			headerList, err := NewKeyValue_List(seg, int32(len(r.Header)))
+			CheckError(err)
+
+			count := 0
+			for key, value := range r.Header {
+				log.WithFields(log.Fields{
+					"key":   key,
+					"value": strings.Join(value, ","),
+				}).Debug("processing request header")
+				header, err := NewKeyValue(seg)
+				CheckError(err)
+				header.SetKey(key)
+				header.SetValue(strings.Join(value, ","))
+				headerList.Set(count, header)
+				count++
+			}
+
+			request.SetHeaders(headerList)
+
 			return p.SetRequestObj(request)
 		}).Response()
 

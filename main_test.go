@@ -68,7 +68,6 @@ func TestCapapi(t *testing.T) {
 		})
 
 		Convey("with port policy", func() {
-
 			key, bytes := NewPolicySetBuilder().
 				WithPolicy(NewPolicyBuilder().WithVerb("PUT")).
 				Build()
@@ -158,7 +157,6 @@ func TestCapapi(t *testing.T) {
 		})
 
 		Convey("with templated path policy", func() {
-
 			key, bytes := NewPolicySetBuilder().
 				WithPolicy(NewPolicyBuilder().WithPath("/clients/{clientId:(1|2)}/data")).
 				Build()
@@ -201,6 +199,56 @@ func TestCapapi(t *testing.T) {
 				defer resp.Body.Close()
 				body, _ := ioutil.ReadAll(resp.Body)
 
+				So(resp.StatusCode, ShouldEqual, 401)
+				So(strings.Trim(string(body), "\n"), ShouldEqual, "")
+			})
+		})
+
+		Convey("with a header policy", func() {
+			key, bytes := NewPolicySetBuilder().
+				WithPolicy(NewPolicyBuilder().WithHeader("X-Something", []string{"1"})).
+				Build()
+
+			keystore.Set(key, bytes)
+
+			Convey("must succeed", func() {
+				client := &http.Client{}
+
+				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+				req.Header.Set("X-Something", "1")
+
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Error(err)
+				}
+				defer resp.Body.Close()
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					panic(err)
+				}
+
+				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
+			})
+
+			Convey("must fail", func() {
+
+				client := &http.Client{}
+
+				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+				req.Header.Set("X-Something", "2")
+
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Error(err)
+				}
+				defer resp.Body.Close()
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					panic(err)
+				}
 				So(resp.StatusCode, ShouldEqual, 401)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, "")
 			})

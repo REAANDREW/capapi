@@ -35,6 +35,17 @@ func (instance PolicyBuilder) WithVerb(verb string) PolicyBuilder {
 	}
 }
 
+func (instance PolicyBuilder) WithHeader(key string, values []string) PolicyBuilder {
+	headers := instance.Headers
+	headers[key] = values
+	return PolicyBuilder{
+		Path:    instance.Path,
+		Verbs:   instance.Verbs,
+		Headers: headers,
+		Query:   instance.Query,
+	}
+}
+
 func (instance PolicyBuilder) Build(seg *capnp.Segment) Policy {
 	policy, _ := NewPolicy(seg)
 
