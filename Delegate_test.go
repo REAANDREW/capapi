@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -26,15 +27,37 @@ func TestDelegation(t *testing.T) {
 		defer sut.Stop()
 		sut.Start()
 
+		delegateURL := sut.APIGatewayControlProxy.URL + "/delegate"
+
 		Convey("unrestricted capability", func() {
 
 			client := &http.Client{}
 			key, policyBytes := NewPolicySetBuilder().Build()
 			keystore.Set(key, policyBytes)
 
-			Convey("with port policy", func() {
+			Convey("returns a different key", func() {
+				var jsonBytes = []byte(`[]`)
 
-				delegateURL := sut.APIGatewayControlProxy.URL + "/delegate"
+				req, _ := http.NewRequest("POST", delegateURL, bytes.NewBuffer(jsonBytes))
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+				resp, err := client.Do(req)
+				if err != nil {
+					panic(err)
+				}
+				defer resp.Body.Close()
+				delegatedKey, _ := ioutil.ReadAll(resp.Body)
+
+				So(delegatedKey, ShouldNotEqual, key)
+				So(len(delegatedKey), ShouldEqual, len(key))
+
+				decodedKey, _ := base64.StdEncoding.DecodeString(key)
+				So(len(decodedKey), ShouldEqual, KeySizeBytes())
+
+				decodedDelegatedKey, _ := base64.StdEncoding.DecodeString(key)
+				So(len(decodedDelegatedKey), ShouldEqual, KeySizeBytes())
+			})
+
+			Convey("with port policy", func() {
 
 				var jsonBytes = []byte(`[{"verbs":["put"]}]`)
 
@@ -70,7 +93,6 @@ func TestDelegation(t *testing.T) {
 				})
 
 			})
-
 		})
 	})
 }
