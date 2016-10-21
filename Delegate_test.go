@@ -27,34 +27,37 @@ func TestDelegation(t *testing.T) {
 		sut.Start()
 
 		Convey("unrestricted capability", func() {
-			key, policyBytes := NewPolicySetBuilder().
-				WithPolicy(NewPolicyBuilder().WithVerb("patch").WithVerb("put")).
-				Build()
-			keystore.Set(key, policyBytes)
 
 			client := &http.Client{}
+			key, policyBytes := NewPolicySetBuilder().Build()
+			keystore.Set(key, policyBytes)
 
-			delegateURL := sut.APIGatewayControlProxy.URL + "/delegate"
+			Convey("with port policy", func() {
 
-			var jsonBytes = []byte(`[{"verbs":["put"]}]`)
-			req, _ := http.NewRequest("POST", delegateURL, bytes.NewBuffer(jsonBytes))
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-			resp, err := client.Do(req)
-			if err != nil {
-				panic(err)
-			}
+				delegateURL := sut.APIGatewayControlProxy.URL + "/delegate"
+				var jsonBytes = []byte(`[{"verbs":["put"]}]`)
+				req, _ := http.NewRequest("POST", delegateURL, bytes.NewBuffer(jsonBytes))
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+				resp, err := client.Do(req)
+				if err != nil {
+					panic(err)
+				}
+				defer resp.Body.Close()
+				delegatedKey, _ := ioutil.ReadAll(resp.Body)
 
-			defer resp.Body.Close()
-			delegatedKey, _ := ioutil.ReadAll(resp.Body)
+				Convey("must succeed", func() {
+					newReq, _ := http.NewRequest("put", sut.APIGatewayProxy.URL+"/something", bytes.NewBuffer(jsonBytes))
+					newReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", delegatedKey))
+					newResp, err := client.Do(newReq)
+					if err != nil {
+						panic(err)
+					}
 
-			newReq, _ := http.NewRequest("put", sut.APIGatewayProxy.URL+"/something", bytes.NewBuffer(jsonBytes))
-			newReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", delegatedKey))
-			newResp, err := client.Do(newReq)
-			if err != nil {
-				panic(err)
-			}
+					So(newResp.StatusCode, ShouldEqual, 200)
+				})
 
-			So(newResp.StatusCode, ShouldEqual, 200)
+			})
+
 		})
 	})
 }

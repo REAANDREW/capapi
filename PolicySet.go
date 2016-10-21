@@ -101,7 +101,7 @@ func (instance PolicySet) Clone(segment *capnp.Segment) PolicySet {
 			CheckError(err)
 
 			values, err := keyValuePolicy.Values()
-			CHeckError(err)
+			CheckError(err)
 			var queryValueStrings = []string{}
 
 			for queryValueIndex := 0; queryValueIndex < values.Len(); queryValueIndex++ {
