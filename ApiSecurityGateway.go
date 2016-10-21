@@ -13,14 +13,16 @@ import (
 //LOOKING TO MOVE TO https://github.com/hashicorp/yamux
 //LOOKS REALLY USEFUL ESPECIALLY TURNING AROUND THE STREAMS
 
-type ApiSecurityGateway struct {
+//APISecurityGateway is the rpc server which return an instance of a
+//HTTPProxyFactory for the caller to use.
+type APISecurityGateway struct {
 	UpStream url.URL
 	KeyStore KeyStore
 }
 
-var abort = rpc.Abort{}
-
-func (instance ApiSecurityGateway) Start(listener net.Listener) {
+//Start will start the APISecurityGateway.
+//It takes a stream based listener.
+func (instance APISecurityGateway) Start(listener net.Listener) {
 	for {
 		if c, err := listener.Accept(); err == nil {
 			go func() {

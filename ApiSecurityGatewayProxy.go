@@ -32,14 +32,16 @@ func getProxy(apiKeyValue string, factory HTTPProxyFactoryAPI, ctx context.Conte
 	return proxy, nil
 }
 
-type ApiSecurityGatewayProxy struct {
+//APISecurityGatewayProxy allows a caller to call the APISecurityGateway using the Cap'N Proto procotol.
+type APISecurityGatewayProxy struct {
 	UpStream string
 }
 
-func (instance ApiSecurityGatewayProxy) ControlHandler() http.HandlerFunc {
+//ControlHandler returns the http.HandlerFunc to allow for Delegations and Revocations to be requested via HTTP
+func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		var policies []PolicyJsonDto
+		var policies []PolicyJSONDto
 
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&policies)
@@ -113,7 +115,8 @@ func (instance ApiSecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 	})
 }
 
-func (instance ApiSecurityGatewayProxy) Handler() http.HandlerFunc {
+//Handler returns the http.HandlerFunc which handles the request via http and proxies it to the rpc server
+func (instance APISecurityGatewayProxy) Handler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-CAPAPI", "1")
 		apiKeyValue, err := ParseAuthorization(r)

@@ -7,6 +7,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+//CreateKey creates a new 512 bit key
 func CreateKey() (string, error) {
 	keyBytes := make([]byte, 64)
 	_, err := rand.Read(keyBytes)

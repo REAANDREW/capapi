@@ -8,14 +8,16 @@ import (
 	capnp "zombiezen.com/go/capnproto2"
 )
 
-type HttpProxy struct {
+//HTTPProxy is used to call the upstream HTTP API which is being secured
+type HTTPProxy struct {
 	APIKey   APIKey
 	scope    PolicySet
 	upStream url.URL
 	keyStore KeyStore
 }
 
-func (instance HttpProxy) Request(call HTTPProxyAPI_request) error {
+//Request transforms the request from the rpc structures into a HTTP Request and sends to the upstream HTTP API which is being secured
+func (instance HTTPProxy) Request(call HTTPProxyAPI_request) error {
 
 	req, _ := call.Params.RequestObj()
 
@@ -39,7 +41,8 @@ func (instance HttpProxy) Request(call HTTPProxyAPI_request) error {
 	return call.Results.SetResponse(response)
 }
 
-func (instance HttpProxy) Delegate(call HTTPProxyAPI_delegate) error {
+//Delegate allows the capability currently assigned to the HTTPProxy to be delegated
+func (instance HTTPProxy) Delegate(call HTTPProxyAPI_delegate) error {
 	scope, _ := call.Params.Scope()
 
 	//Create a new policy set
@@ -69,7 +72,8 @@ func (instance HttpProxy) Delegate(call HTTPProxyAPI_delegate) error {
 	return call.Results.SetKey(key)
 }
 
-func (instance HttpProxy) Revoke(call HTTPProxyAPI_revoke) error {
+//Revoke allows the current capability
+func (instance HTTPProxy) Revoke(call HTTPProxyAPI_revoke) error {
 	call.Results.SetResult(false)
 	return nil
 }

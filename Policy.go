@@ -177,6 +177,7 @@ func validatePath(policy Policy, request HTTPRequest) bool {
 		validateTemplatedPath(policy, request)
 }
 
+//Validate validates request against its the Policy state and returns the result.
 func (instance Policy) Validate(request HTTPRequest) bool {
 	verbResult := validateVerbs(instance, request)
 	pathResult := validatePath(instance, request)

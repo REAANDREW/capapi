@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+//ParseAuthorization returns the Bearer Authorization Token value
+//Returns the authorization token value if present
+//Returns an error if it is not present
 func ParseAuthorization(request *http.Request) (string, error) {
 
 	header := request.Header.Get("Authorization")

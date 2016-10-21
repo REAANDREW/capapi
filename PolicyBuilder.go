@@ -2,6 +2,7 @@ package main
 
 import capnp "zombiezen.com/go/capnproto2"
 
+//PolicyBuilder is a builder to create a new Policy
 type PolicyBuilder struct {
 	Path    string
 	Verbs   []string
@@ -9,6 +10,7 @@ type PolicyBuilder struct {
 	Query   map[string][]string
 }
 
+//NewPolicyBuilder creates, initializes and returns a PolicyBuilder.
 func NewPolicyBuilder() PolicyBuilder {
 	return PolicyBuilder{
 		Verbs:   []string{},
@@ -17,6 +19,7 @@ func NewPolicyBuilder() PolicyBuilder {
 	}
 }
 
+//WithPath sets the path and returns a PolicyBuilder.
 func (instance PolicyBuilder) WithPath(path string) PolicyBuilder {
 	return PolicyBuilder{
 		Path:    path,
@@ -26,6 +29,7 @@ func (instance PolicyBuilder) WithPath(path string) PolicyBuilder {
 	}
 }
 
+//WithVerb adds a verb to the collection of the policy and returns a PolicyBuilder.
 func (instance PolicyBuilder) WithVerb(verb string) PolicyBuilder {
 	return PolicyBuilder{
 		Path:    instance.Path,
@@ -35,6 +39,7 @@ func (instance PolicyBuilder) WithVerb(verb string) PolicyBuilder {
 	}
 }
 
+//WithHeader adds a Header and permitted values to the policy and returns a PolicyBuilder.
 func (instance PolicyBuilder) WithHeader(key string, values []string) PolicyBuilder {
 	headers := instance.Headers
 	headers[key] = values
@@ -46,6 +51,7 @@ func (instance PolicyBuilder) WithHeader(key string, values []string) PolicyBuil
 	}
 }
 
+//WithQuery adds a QueryString key and permitted values to the policy and returns a PolicyBuilder.
 func (instance PolicyBuilder) WithQuery(key string, values []string) PolicyBuilder {
 	query := instance.Query
 	query[key] = values
@@ -57,6 +63,7 @@ func (instance PolicyBuilder) WithQuery(key string, values []string) PolicyBuild
 	}
 }
 
+//Build takes a message segment, builds and returns a Policy.
 func (instance PolicyBuilder) Build(seg *capnp.Segment) Policy {
 	policy, _ := NewPolicy(seg)
 

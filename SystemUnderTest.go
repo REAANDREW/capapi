@@ -9,8 +9,9 @@ import (
 	"time"
 )
 
+//SystemUnderTest is a facade to start the APISecurityGateway, APISecurityGatewayProxy and a Fake Upstream HTTP API in order to test the solution.
 type SystemUnderTest struct {
-	APIGateway             ApiSecurityGateway
+	APIGateway             APISecurityGateway
 	APIGatewayProxy        *httptest.Server
 	APIGatewayControlProxy *httptest.Server
 	FakeEndpoint           *httptest.Server
@@ -20,6 +21,7 @@ type SystemUnderTest struct {
 	ServerListener         net.Listener
 }
 
+//CreateSystemUnderTest takes a KeyStore and returns a pointer to a new instance of a SystemUnderTest
 func CreateSystemUnderTest(keyStore KeyStore) *SystemUnderTest {
 	instance := &SystemUnderTest{}
 
@@ -32,7 +34,7 @@ func CreateSystemUnderTest(keyStore KeyStore) *SystemUnderTest {
 		fmt.Fprintln(w, expectedResponseBody)
 	}))
 
-	var gatewayProxy = ApiSecurityGatewayProxy{
+	var gatewayProxy = APISecurityGatewayProxy{
 		UpStream: ":12345",
 	}
 
@@ -41,14 +43,18 @@ func CreateSystemUnderTest(keyStore KeyStore) *SystemUnderTest {
 
 	return instance
 }
+
+//SetResponseBody sets the response which the fake upstream HTTP API will return.
 func (instance *SystemUnderTest) SetResponseBody(value string) {
 	instance.ResponseBody = value
 }
 
+//SetResponseCode sets the response code which the fake upstream HTTP API will return.
 func (instance *SystemUnderTest) SetResponseCode(value int) {
 	instance.ResponseCode = value
 }
 
+//Start starts all the systems under the System Under Test.
 func (instance *SystemUnderTest) Start() {
 	instance.FakeEndpoint.Start()
 	instance.APIGatewayProxy.Start()
@@ -60,13 +66,14 @@ func (instance *SystemUnderTest) Start() {
 	CheckError(err)
 
 	upStreamURL, _ := url.Parse(instance.FakeEndpoint.URL)
-	var gateway = ApiSecurityGateway{
+	var gateway = APISecurityGateway{
 		UpStream: *upStreamURL,
 		KeyStore: instance.KeyStore,
 	}
 	go gateway.Start(serverListener)
 }
 
+//Stop stops all the systems under the System Under Test.
 func (instance *SystemUnderTest) Stop() {
 	instance.ServerListener.Close()
 	instance.FakeEndpoint.Close()
