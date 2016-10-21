@@ -33,25 +33,47 @@ func TestCapapi(t *testing.T) {
 
 	log.SetLevel(log.ErrorLevel)
 
-	Convey("API Call", t, func() {
-		var keystore = CreateInProcKeyStore()
-		var sut = CreateSystemUnderTest(keystore)
-		var expectedResponseBody = "You Made It Baby, Yeh!"
-		var expectedResponseCode = 200
+	var keystore = CreateInProcKeyStore()
+	var sut = CreateSystemUnderTest(keystore)
+	var expectedResponseBody = "You Made It Baby, Yeh!"
+	var expectedResponseCode = 200
 
-		sut.SetResponseBody(expectedResponseBody)
-		sut.SetResponseCode(expectedResponseCode)
-		defer sut.Stop()
-		sut.Start()
+	sut.SetResponseBody(expectedResponseBody)
+	sut.SetResponseCode(expectedResponseCode)
+	defer sut.Stop()
+	sut.Start()
 
-		Convey("with unrestricted access", func() {
-			key, bytes := NewPolicySetBuilder().Build()
-			keystore.Set(key, bytes)
+	Convey("with unrestricted access", t, func() {
+		key, bytes := NewPolicySetBuilder().Build()
+		keystore.Set(key, bytes)
 
+		client := &http.Client{}
+		req, _ := http.NewRequest("GET", sut.APIGatewayProxy.URL, nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+		resp, _ := client.Do(req)
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+
+		So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+		So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
+	})
+
+	Convey("with port policy", t, func() {
+		key, bytes := NewPolicySetBuilder().
+			WithPolicy(NewPolicyBuilder().WithVerb("PUT")).
+			Build()
+
+		keystore.Set(key, bytes)
+
+		Convey("must succeed", func() {
 			client := &http.Client{}
-			req, _ := http.NewRequest("GET", sut.APIGatewayProxy.URL, nil)
+
+			req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-			resp, _ := client.Do(req)
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
 			defer resp.Body.Close()
 			body, _ := ioutil.ReadAll(resp.Body)
 
@@ -59,261 +81,237 @@ func TestCapapi(t *testing.T) {
 			So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
 		})
 
-		Convey("with port policy", func() {
-			key, bytes := NewPolicySetBuilder().
-				WithPolicy(NewPolicyBuilder().WithVerb("PUT")).
-				Build()
+		Convey("must fail", func() {
+			client := &http.Client{}
+			req, _ := http.NewRequest("POST", sut.APIGatewayProxy.URL, nil)
 
-			keystore.Set(key, bytes)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
+			defer resp.Body.Close()
+			body, _ := ioutil.ReadAll(resp.Body)
 
-			Convey("must succeed", func() {
-				client := &http.Client{}
+			So(resp.StatusCode, ShouldEqual, 401)
+			So(strings.Trim(string(body), "\n"), ShouldEqual, "")
+		})
+	})
 
-				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, _ := ioutil.ReadAll(resp.Body)
+	Convey("with exact path policy", t, func() {
+		okPath := "/some/path"
 
-				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
-			})
+		key, bytes := NewPolicySetBuilder().
+			WithPolicy(NewPolicyBuilder().WithPath(okPath)).
+			Build()
 
-			Convey("must fail", func() {
-				client := &http.Client{}
-				req, _ := http.NewRequest("POST", sut.APIGatewayProxy.URL, nil)
+		keystore.Set(key, bytes)
 
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, _ := ioutil.ReadAll(resp.Body)
+		Convey("must succeed", func() {
+			client := &http.Client{}
 
-				So(resp.StatusCode, ShouldEqual, 401)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, "")
-			})
+			exactPath := sut.APIGatewayProxy.URL + okPath
+
+			req, _ := http.NewRequest("PUT", exactPath, nil)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				panic(err)
+			}
+
+			So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+			So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
 		})
 
-		Convey("with exact path policy", func() {
-			okPath := "/some/path"
+		Convey("must fail", func() {
+			client := &http.Client{}
 
-			key, bytes := NewPolicySetBuilder().
-				WithPolicy(NewPolicyBuilder().WithPath(okPath)).
-				Build()
+			exactPath := sut.APIGatewayProxy.URL + "/someother/path"
+			req, _ := http.NewRequest("POST", exactPath, nil)
 
-			keystore.Set(key, bytes)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
+			defer resp.Body.Close()
+			body, _ := ioutil.ReadAll(resp.Body)
 
-			Convey("must succeed", func() {
-				client := &http.Client{}
+			So(resp.StatusCode, ShouldEqual, 401)
+			So(strings.Trim(string(body), "\n"), ShouldEqual, "")
+		})
+	})
 
-				exactPath := sut.APIGatewayProxy.URL + okPath
+	Convey("with templated path policy", t, func() {
+		key, bytes := NewPolicySetBuilder().
+			WithPolicy(NewPolicyBuilder().WithPath("/clients/{clientId:(1|2)}/data")).
+			Build()
 
-				req, _ := http.NewRequest("PUT", exactPath, nil)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+		keystore.Set(key, bytes)
 
-				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
-			})
+		Convey("must succeed", func() {
+			client := &http.Client{}
 
-			Convey("must fail", func() {
-				client := &http.Client{}
+			exactPath := sut.APIGatewayProxy.URL + "/clients/1/data"
 
-				exactPath := sut.APIGatewayProxy.URL + "/someother/path"
-				req, _ := http.NewRequest("POST", exactPath, nil)
+			req, _ := http.NewRequest("PUT", exactPath, nil)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				panic(err)
+			}
 
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, _ := ioutil.ReadAll(resp.Body)
-
-				So(resp.StatusCode, ShouldEqual, 401)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, "")
-			})
+			So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+			So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
 		})
 
-		Convey("with templated path policy", func() {
-			key, bytes := NewPolicySetBuilder().
-				WithPolicy(NewPolicyBuilder().WithPath("/clients/{clientId:(1|2)}/data")).
-				Build()
+		Convey("must fail", func() {
+			client := &http.Client{}
 
-			keystore.Set(key, bytes)
+			exactPath := sut.APIGatewayProxy.URL + "/clients/3/data"
 
-			Convey("must succeed", func() {
-				client := &http.Client{}
+			req, _ := http.NewRequest("POST", exactPath, nil)
 
-				exactPath := sut.APIGatewayProxy.URL + "/clients/1/data"
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
+			defer resp.Body.Close()
+			body, _ := ioutil.ReadAll(resp.Body)
 
-				req, _ := http.NewRequest("PUT", exactPath, nil)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+			So(resp.StatusCode, ShouldEqual, 401)
+			So(strings.Trim(string(body), "\n"), ShouldEqual, "")
+		})
+	})
 
-				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
-			})
+	Convey("with a header policy", t, func() {
+		key, bytes := NewPolicySetBuilder().
+			WithPolicy(NewPolicyBuilder().WithHeader("X-Something", []string{"1"})).
+			Build()
 
-			Convey("must fail", func() {
-				client := &http.Client{}
+		keystore.Set(key, bytes)
 
-				exactPath := sut.APIGatewayProxy.URL + "/clients/3/data"
+		Convey("must succeed", func() {
+			client := &http.Client{}
 
-				req, _ := http.NewRequest("POST", exactPath, nil)
+			req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+			req.Header.Set("X-Something", "1")
 
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, _ := ioutil.ReadAll(resp.Body)
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				panic(err)
+			}
 
-				So(resp.StatusCode, ShouldEqual, 401)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, "")
-			})
+			So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+			So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
 		})
 
-		Convey("with a header policy", func() {
-			key, bytes := NewPolicySetBuilder().
-				WithPolicy(NewPolicyBuilder().WithHeader("X-Something", []string{"1"})).
-				Build()
+		Convey("must fail", func() {
 
-			keystore.Set(key, bytes)
+			client := &http.Client{}
 
-			Convey("must succeed", func() {
-				client := &http.Client{}
+			req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+			req.Header.Set("X-Something", "2")
 
-				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				req.Header.Set("X-Something", "1")
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				panic(err)
+			}
+			So(resp.StatusCode, ShouldEqual, 401)
+			So(strings.Trim(string(body), "\n"), ShouldEqual, "")
+		})
+	})
 
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+	Convey("with a querystring policy", t, func() {
+		key, bytes := NewPolicySetBuilder().
+			WithPolicy(NewPolicyBuilder().WithQuery("a", []string{})).
+			Build()
 
-				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
-			})
+		keystore.Set(key, bytes)
 
-			Convey("must fail", func() {
+		Convey("must succeed", func() {
+			client := &http.Client{}
 
-				client := &http.Client{}
+			req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+			req.URL.Query().Add("a", "1")
 
-				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				req.Header.Set("X-Something", "2")
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				panic(err)
+			}
 
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
-				So(resp.StatusCode, ShouldEqual, 401)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, "")
-			})
+			So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+			So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
 		})
 
-		Convey("with a querystring policy", func() {
-			key, bytes := NewPolicySetBuilder().
-				WithPolicy(NewPolicyBuilder().WithQuery("a", []string{})).
-				Build()
+		Convey("must fail", func() {
+			client := &http.Client{}
 
-			keystore.Set(key, bytes)
+			req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+			req.URL.Query().Add("b", "1")
 
-			Convey("must succeed", func() {
-				client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				panic(err)
+			}
 
-				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				req.URL.Query().Add("a", "1")
+			So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+			So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
+		})
 
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+		Convey("must fail with no query string", func() {
+			client := &http.Client{}
 
-				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
-			})
+			req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 
-			Convey("must fail", func() {
-				client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error(err)
+			}
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				panic(err)
+			}
 
-				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-				req.URL.Query().Add("b", "1")
-
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
-
-				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
-			})
-
-			Convey("must fail with no query string", func() {
-				client := &http.Client{}
-
-				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
-				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
-
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
-				defer resp.Body.Close()
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
-
-				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
-				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
-			})
+			So(resp.StatusCode, ShouldEqual, expectedResponseCode)
+			So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
 		})
 	})
 }
