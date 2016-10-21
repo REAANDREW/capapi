@@ -249,6 +249,24 @@ func TestPolicy(t *testing.T) {
 
 					So(policy.Validate(request), ShouldEqual, true)
 				})
+
+				Convey("when the request verb is the same as the policy verb but is not the same case", func() {
+					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
+
+					policy, _ := NewPolicy(seg)
+
+					verbs, _ := capnp.NewTextList(seg, 1)
+
+					verbs.Set(0, "GET")
+
+					policy.SetVerbs(verbs)
+
+					request, _ := NewHTTPRequest(seg)
+
+					request.SetVerb("get")
+
+					So(policy.Validate(request), ShouldEqual, true)
+				})
 				Convey("when the request has a header key which is present in the header policy", func() {
 					_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 

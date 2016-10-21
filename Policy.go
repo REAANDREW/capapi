@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
@@ -29,7 +30,7 @@ func validateVerbs(policy Policy, request HTTPRequest) bool {
 			"requestVerb": verb,
 			"policyVerb":  scopedVerb,
 		}).Debug("validating verb")
-		if verb == scopedVerb {
+		if strings.ToUpper(verb) == strings.ToUpper(scopedVerb) {
 			return true
 		}
 	}
