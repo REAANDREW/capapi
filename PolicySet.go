@@ -80,6 +80,7 @@ func (instance PolicySet) Clone(segment *capnp.Segment) PolicySet {
 			CheckError(err)
 
 			values, err := keyValuePolicy.Values()
+			CheckError(err)
 			var headerValueStrings = []string{}
 
 			for headerValueIndex := 0; headerValueIndex < values.Len(); headerValueIndex++ {
@@ -100,6 +101,7 @@ func (instance PolicySet) Clone(segment *capnp.Segment) PolicySet {
 			CheckError(err)
 
 			values, err := keyValuePolicy.Values()
+			CHeckError(err)
 			var queryValueStrings = []string{}
 
 			for queryValueIndex := 0; queryValueIndex < values.Len(); queryValueIndex++ {
