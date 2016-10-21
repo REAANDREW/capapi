@@ -1,10 +1,6 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/base64"
-
-	log "github.com/Sirupsen/logrus"
 	capnp "zombiezen.com/go/capnproto2"
 )
 
@@ -18,9 +14,7 @@ func (instance PolicySetBuilder) WithPolicy(builder PolicyBuilder) PolicySetBuil
 	}
 }
 
-func (instance PolicySetBuilder) Build() (string, []byte) {
-	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
-
+func (instance PolicySetBuilder) BuildPolicySet(seg *capnp.Segment) PolicySet {
 	policySet, _ := NewRootPolicySet(seg)
 	policyList, _ := NewPolicy_List(seg, int32(len(instance.PolicyBuilders)))
 
@@ -31,15 +25,21 @@ func (instance PolicySetBuilder) Build() (string, []byte) {
 
 	policySet.SetPolicies(policyList)
 
-	byteValue, _ := msg.Marshal()
-	keyBytes := make([]byte, 64)
-	_, err := rand.Read(keyBytes)
+	return policySet
+}
+
+func (instance PolicySetBuilder) Build() (string, []byte) {
+
+	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
+
+	instance.BuildPolicySet(seg)
+
+	key, err := CreateKey()
 	CheckError(err)
 
-	key := base64.StdEncoding.EncodeToString(keyBytes)
-	log.WithFields(log.Fields{
-		"key": key,
-	}).Info("Key Generated")
+	byteValue, err := msg.Marshal()
+	CheckError(err)
+
 	return key, byteValue
 }
 

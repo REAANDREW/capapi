@@ -21,14 +21,6 @@ WIN, WIN, WIN, WIN!!
 
 */
 
-func CreateKeyStore() KeyStore {
-	keyStore := InProcessKeyStore{
-		Keys: map[string][]byte{},
-	}
-
-	return keyStore
-}
-
 func CreateFakeEndpoint() *httptest.Server {
 	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
@@ -42,7 +34,7 @@ func TestCapapi(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
 
 	Convey("API Call", t, func() {
-		var keystore = CreateKeyStore()
+		var keystore = CreateInProcKeyStore()
 		var sut = CreateSystemUnderTest(keystore)
 		var expectedResponseBody = "You Made It Baby, Yeh!"
 		var expectedResponseCode = 200

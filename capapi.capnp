@@ -43,6 +43,7 @@ struct Policy {
 
 struct PolicySet{
     policies @0 :List(Policy);
+    delegation @1 :PolicySet;
 }
 
 struct APIKey {

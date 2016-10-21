@@ -28,6 +28,7 @@ func (instance HTTPProxyFactory) GetHTTPProxy(call HTTPProxyFactoryAPI_getHTTPPr
 		APIKey:   apiKey,
 		scope:    scope,
 		upStream: instance.UpStream,
+		keyStore: instance.KeyStore,
 	})
 
 	return call.Results.SetProxy(server)

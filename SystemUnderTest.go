@@ -10,13 +10,14 @@ import (
 )
 
 type SystemUnderTest struct {
-	APIGateway      ApiSecurityGateway
-	APIGatewayProxy *httptest.Server
-	FakeEndpoint    *httptest.Server
-	KeyStore        KeyStore
-	ResponseBody    string
-	ResponseCode    int
-	ServerListener  net.Listener
+	APIGateway             ApiSecurityGateway
+	APIGatewayProxy        *httptest.Server
+	APIGatewayControlProxy *httptest.Server
+	FakeEndpoint           *httptest.Server
+	KeyStore               KeyStore
+	ResponseBody           string
+	ResponseCode           int
+	ServerListener         net.Listener
 }
 
 func CreateSystemUnderTest(keyStore KeyStore) *SystemUnderTest {
@@ -36,6 +37,7 @@ func CreateSystemUnderTest(keyStore KeyStore) *SystemUnderTest {
 	}
 
 	instance.APIGatewayProxy = httptest.NewUnstartedServer(gatewayProxy.Handler())
+	instance.APIGatewayControlProxy = httptest.NewUnstartedServer(gatewayProxy.ControlHandler())
 
 	return instance
 }
@@ -50,6 +52,7 @@ func (instance *SystemUnderTest) SetResponseCode(value int) {
 func (instance *SystemUnderTest) Start() {
 	instance.FakeEndpoint.Start()
 	instance.APIGatewayProxy.Start()
+	instance.APIGatewayControlProxy.Start()
 
 	serverListener, err := net.Listen("tcp", ":12345")
 	instance.ServerListener = serverListener
@@ -65,8 +68,9 @@ func (instance *SystemUnderTest) Start() {
 }
 
 func (instance *SystemUnderTest) Stop() {
+	instance.ServerListener.Close()
 	instance.FakeEndpoint.Close()
 	instance.APIGatewayProxy.Close()
-	instance.ServerListener.Close()
+	instance.APIGatewayControlProxy.Close()
 	time.Sleep(1 * time.Millisecond)
 }

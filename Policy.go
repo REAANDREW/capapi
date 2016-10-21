@@ -188,7 +188,7 @@ func (instance Policy) Validate(request HTTPRequest) bool {
 		"pathResult":   strconv.FormatBool(pathResult),
 		"headerResult": strconv.FormatBool(headersResult),
 		"queryResult":  strconv.FormatBool(queryResult),
-	}).Info("validate")
+	}).Debug("validate")
 
 	return verbResult && pathResult && headersResult && queryResult
 }

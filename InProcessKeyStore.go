@@ -14,3 +14,11 @@ func (instance InProcessKeyStore) Get(key string) ([]byte, error) {
 	}
 	return instance.Keys[key], nil
 }
+
+func CreateInProcKeyStore() KeyStore {
+	keyStore := InProcessKeyStore{
+		Keys: map[string][]byte{},
+	}
+
+	return keyStore
+}
