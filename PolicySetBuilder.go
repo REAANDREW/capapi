@@ -47,6 +47,7 @@ func (instance PolicySetBuilder) Build() (string, []byte) {
 	return key, byteValue
 }
 
+//NewPolicySetBuilder creates, initializes and returns a new PolicySetBuilder.
 func NewPolicySetBuilder() PolicySetBuilder {
 	return PolicySetBuilder{
 		PolicyBuilders: []PolicyBuilder{},
