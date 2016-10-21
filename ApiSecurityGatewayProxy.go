@@ -95,6 +95,7 @@ func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 				}
 
 				policy.SetVerbs(verbList)
+				policy.SetPath(jsonPolicy.Path)
 				policyList.Set(index, policy)
 			}
 
