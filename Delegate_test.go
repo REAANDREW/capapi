@@ -35,7 +35,9 @@ func TestDelegation(t *testing.T) {
 			Convey("with port policy", func() {
 
 				delegateURL := sut.APIGatewayControlProxy.URL + "/delegate"
+
 				var jsonBytes = []byte(`[{"verbs":["put"]}]`)
+
 				req, _ := http.NewRequest("POST", delegateURL, bytes.NewBuffer(jsonBytes))
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 				resp, err := client.Do(req)
@@ -54,6 +56,17 @@ func TestDelegation(t *testing.T) {
 					}
 
 					So(newResp.StatusCode, ShouldEqual, 200)
+				})
+
+				Convey("must fail", func() {
+					newReq, _ := http.NewRequest("get", sut.APIGatewayProxy.URL+"/something", bytes.NewBuffer(jsonBytes))
+					newReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", delegatedKey))
+					newResp, err := client.Do(newReq)
+					if err != nil {
+						panic(err)
+					}
+
+					So(newResp.StatusCode, ShouldEqual, 401)
 				})
 
 			})
