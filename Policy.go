@@ -112,6 +112,12 @@ func validateKeyValues(keyValues KeyValue_List, keyValuePolicies KeyValuePolicy_
 }
 
 func validateHeaderValues(keyValues KeyValue_List, keyValuePolicies KeyValuePolicy_List) bool {
+
+	log.WithFields(log.Fields{
+		"keyValues:Length":        keyValues.Len(),
+		"keyValuePolicies:Length": keyValuePolicies.Len(),
+	}).Debug("validateHeaderValues:enter")
+
 	for i := 0; i < keyValues.Len(); i++ {
 		valid := false
 		for j := 0; j < keyValuePolicies.Len(); j++ {
@@ -131,6 +137,11 @@ func validateHeaderValues(keyValues KeyValue_List, keyValuePolicies KeyValuePoli
 			policyValues, err := policy.Values()
 			CheckError(err)
 
+			log.WithFields(log.Fields{
+				"policyKey": policyKey,
+				"reqKey":    reqKey,
+			}).Debug("validateHeaderValues:checking")
+
 			if reqKey == policyKey {
 				if policyValues.Len() == 0 {
 					valid = true
@@ -139,12 +150,20 @@ func validateHeaderValues(keyValues KeyValue_List, keyValuePolicies KeyValuePoli
 						policyKeyValue, err := policyValues.At(k)
 						CheckError(err)
 
+						log.WithFields(log.Fields{
+							"policyKeyValue": policyKeyValue,
+							"reqKeyValue":    reqKeyValue,
+						}).Debug("validateHeaderValues:checking")
+
 						if reqKeyValue == policyKeyValue {
 							valid = true
 							break
 						}
 					}
 				}
+				log.WithFields(log.Fields{
+					"valid": valid,
+				}).Debug("validateHeaderValues")
 				if !valid {
 					return false
 				}

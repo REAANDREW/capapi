@@ -87,6 +87,8 @@ func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 				policy, err := NewPolicy(seg)
 				CheckError(err)
 
+				policy.SetPath(jsonPolicy.Path)
+
 				verbList, err := capnp.NewTextList(seg, int32(len(jsonPolicy.Verbs)))
 				CheckError(err)
 
@@ -95,11 +97,40 @@ func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 				}
 
 				policy.SetVerbs(verbList)
-				policy.SetPath(jsonPolicy.Path)
+
+				headerKeyValueList, err := NewKeyValuePolicy_List(seg, int32(len(jsonPolicy.Headers)))
+				CheckError(err)
+
+				headerCount := 0
+				for headerKey, headerValues := range jsonPolicy.Headers {
+					keyValuePolicy, err := NewKeyValuePolicy(seg)
+					CheckError(err)
+
+					keyValuePolicy.SetKey(headerKey)
+
+					headerValueList, err := capnp.NewTextList(seg, int32(len(headerValues)))
+					CheckError(err)
+
+					for index, headerValue := range headerValues {
+						log.WithFields(log.Fields{
+							"headerKey":   headerKey,
+							"headerValue": headerValue,
+						}).Debug("adding headers to policy")
+						headerValueList.Set(index, headerValue)
+					}
+
+					keyValuePolicy.SetValues(headerValueList)
+					headerKeyValueList.Set(headerCount, keyValuePolicy)
+					headerCount++
+				}
+				policy.SetHeaders(headerKeyValueList)
+
 				policyList.Set(index, policy)
 			}
 
 			policySet.SetPolicies(policyList)
+
+			log.WithFields(log.Fields(policySet.Map())).Debug("sending delegation")
 
 			return p.SetScope(policySet)
 		}).Key()

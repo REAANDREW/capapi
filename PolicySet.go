@@ -1,9 +1,94 @@
 package main
 
 import (
+	"strings"
+
 	log "github.com/Sirupsen/logrus"
 	capnp "zombiezen.com/go/capnproto2"
 )
+
+//Map returns a map representation of the PolicySet
+func (instance PolicySet) Map() map[string]interface{} {
+	returnMap := map[string]interface{}{}
+
+	policySet := []map[string]interface{}{}
+
+	policies, err := instance.Policies()
+	CheckError(err)
+
+	for i := 0; i < policies.Len(); i++ {
+		policy := policies.At(i)
+		policyMap := map[string]interface{}{}
+
+		path, err := policy.Path()
+		CheckError(err)
+
+		policyMap["path"] = path
+
+		verbs, err := policy.Verbs()
+		verbArray := []string{}
+		CheckError(err)
+
+		for verbIndex := 0; verbIndex < verbs.Len(); verbIndex++ {
+			verbValue, err := verbs.At(verbIndex)
+			CheckError(err)
+			verbArray = append(verbArray, verbValue)
+		}
+
+		headers, err := policy.Headers()
+		CheckError(err)
+
+		headerMap := map[string][]string{}
+
+		for hI := 0; hI < headers.Len(); hI++ {
+			key, err := headers.At(hI).Key()
+			CheckError(err)
+			values, err := headers.At(hI).Values()
+			headerValueArray := []string{}
+			for hvI := 0; hvI < values.Len(); hvI++ {
+				headerValue, err := values.At(hvI)
+				CheckError(err)
+
+				headerValueArray = append(headerValueArray, headerValue)
+			}
+			headerMap[key] = headerValueArray
+		}
+
+		policySet = append(policySet, map[string]interface{}{
+			"path":    path,
+			"verbs":   strings.Join(verbArray, ","),
+			"headers": headerMap,
+		})
+	}
+
+	/*
+
+		for i := 0; i < policies.Len(); i++ {
+			policy := policies.At(i)
+			policyMap := map[string]interface{}{}
+
+			path, err := policy.Path()
+			CheckError(err)
+			policyMap["path"] = path
+
+			verbs, err := policy.Verbs()
+			verbArray := []string{}
+			CheckError(err)
+			for verbIndex := 0; verbIndex < verbs.Len(); verbIndex++ {
+				verbValue, err := verbs.At(verbIndex)
+				CheckError(err)
+				verbArray = append(verbArray, verbValue)
+			}
+
+			policyMap["verbs"] = verbArray
+
+			returnMap["policySet"] = append(returnMap["policySet"], policyMap)
+		}
+
+	*/
+	returnMap["policySet"] = policySet
+	return returnMap
+}
 
 // Validate iterates through each Policy in the set.
 // It returns true if any policy in its set returns true for validation.
