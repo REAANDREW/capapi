@@ -7,6 +7,40 @@ import (
 	capnp "zombiezen.com/go/capnproto2"
 )
 
+//TextListToArray returns a simple string array of the TextList
+func TextListToArray(instance capnp.TextList) []string {
+	returnArray := []string{}
+	for i := 0; i < instance.Len(); i++ {
+		value, err := instance.At(i)
+		CheckError(err)
+		returnArray = append(returnArray, value)
+	}
+	return returnArray
+}
+
+//Map returns a map representation of the KeyValuePolicy
+func (instance KeyValuePolicy_List) Map() map[string][]string {
+
+	returnMap := map[string][]string{}
+
+	for i := 0; i < instance.Len(); i++ {
+		key, err := instance.At(i).Key()
+		CheckError(err)
+		values, err := instance.At(i).Values()
+		valueArray := []string{}
+		for hvI := 0; hvI < values.Len(); hvI++ {
+			value, err := values.At(hvI)
+			CheckError(err)
+
+			valueArray = append(valueArray, value)
+		}
+		returnMap[key] = valueArray
+	}
+
+	return returnMap
+
+}
+
 //Map returns a map representation of the PolicySet
 func (instance PolicySet) Map() map[string]interface{} {
 	returnMap := map[string]interface{}{}
@@ -18,94 +52,27 @@ func (instance PolicySet) Map() map[string]interface{} {
 
 	for i := 0; i < policies.Len(); i++ {
 		policy := policies.At(i)
-		policyMap := map[string]interface{}{}
 
 		path, err := policy.Path()
 		CheckError(err)
 
-		policyMap["path"] = path
-
 		verbs, err := policy.Verbs()
-		verbArray := []string{}
 		CheckError(err)
-
-		for verbIndex := 0; verbIndex < verbs.Len(); verbIndex++ {
-			verbValue, err := verbs.At(verbIndex)
-			CheckError(err)
-			verbArray = append(verbArray, verbValue)
-		}
 
 		headers, err := policy.Headers()
 		CheckError(err)
 
-		headerMap := map[string][]string{}
-
-		for hI := 0; hI < headers.Len(); hI++ {
-			key, err := headers.At(hI).Key()
-			CheckError(err)
-			values, err := headers.At(hI).Values()
-			headerValueArray := []string{}
-			for hvI := 0; hvI < values.Len(); hvI++ {
-				headerValue, err := values.At(hvI)
-				CheckError(err)
-
-				headerValueArray = append(headerValueArray, headerValue)
-			}
-			headerMap[key] = headerValueArray
-		}
-
 		query, err := policy.Query()
 		CheckError(err)
 
-		queryMap := map[string][]string{}
-
-		for hI := 0; hI < query.Len(); hI++ {
-			key, err := query.At(hI).Key()
-			CheckError(err)
-			values, err := query.At(hI).Values()
-			queryValueArray := []string{}
-			for hvI := 0; hvI < values.Len(); hvI++ {
-				queryValue, err := values.At(hvI)
-				CheckError(err)
-
-				queryValueArray = append(queryValueArray, queryValue)
-			}
-			queryMap[key] = queryValueArray
-		}
-
 		policySet = append(policySet, map[string]interface{}{
 			"path":    path,
-			"verbs":   strings.Join(verbArray, ","),
-			"headers": headerMap,
-			"queries": queryMap,
+			"verbs":   strings.Join(TextListToArray(verbs), ","),
+			"headers": headers.Map(),
+			"queries": query.Map(),
 		})
 	}
 
-	/*
-
-		for i := 0; i < policies.Len(); i++ {
-			policy := policies.At(i)
-			policyMap := map[string]interface{}{}
-
-			path, err := policy.Path()
-			CheckError(err)
-			policyMap["path"] = path
-
-			verbs, err := policy.Verbs()
-			verbArray := []string{}
-			CheckError(err)
-			for verbIndex := 0; verbIndex < verbs.Len(); verbIndex++ {
-				verbValue, err := verbs.At(verbIndex)
-				CheckError(err)
-				verbArray = append(verbArray, verbValue)
-			}
-
-			policyMap["verbs"] = verbArray
-
-			returnMap["policySet"] = append(returnMap["policySet"], policyMap)
-		}
-
-	*/
 	returnMap["policySet"] = policySet
 	return returnMap
 }
