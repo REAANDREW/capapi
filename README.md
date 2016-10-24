@@ -7,6 +7,10 @@ Capapi is a object capability based HTTP API Security Gateway.
 
 ![capapi](https://github.com/REAANDREW/capapi/blob/master/capapi.png)
 
+## Getting Started
+
+TBC
+
 ## Rough Write Up
 
 - A KeyStore has a list of PolicySets indexed by an APIKey

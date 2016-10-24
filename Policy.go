@@ -67,8 +67,16 @@ func validateTemplatedPath(policy Policy, request HTTPRequest) bool {
 }
 
 func validateKeyValues(keyValues KeyValue_List, keyValuePolicies KeyValuePolicy_List) bool {
+	log.WithFields(log.Fields{
+		"keyValues:Length":        keyValues.Len(),
+		"keyValuePolicies:Length": keyValuePolicies.Len(),
+	}).Debug("validateQueryValues:enter")
+
 	for i := 0; i < keyValues.Len(); i++ {
 		valid := false
+		log.WithFields(log.Fields{
+			"numberOfPolicies": keyValuePolicies.Len(),
+		}).Debug("Looping query policies")
 		for j := 0; j < keyValuePolicies.Len(); j++ {
 			req := keyValues.At(i)
 
@@ -104,6 +112,9 @@ func validateKeyValues(keyValues KeyValue_List, keyValuePolicies KeyValuePolicy_
 				}
 			}
 		}
+		log.WithFields(log.Fields{
+			"valid": valid,
+		}).Debug("Exiting querystring validation")
 		if !valid {
 			return false
 		}

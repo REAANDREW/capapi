@@ -125,6 +125,41 @@ func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 				}
 				policy.SetHeaders(headerKeyValueList)
 
+				queryKeyValueList, err := NewKeyValuePolicy_List(seg, int32(len(jsonPolicy.Query)))
+				CheckError(err)
+
+				queryCount := 0
+
+				log.WithFields(log.Fields{
+					"numberOfFields": len(jsonPolicy.Query),
+				}).Debug("About to iterate over Query")
+
+				for queryKey, queryValues := range jsonPolicy.Query {
+					keyValuePolicy, err := NewKeyValuePolicy(seg)
+					CheckError(err)
+
+					keyValuePolicy.SetKey(queryKey)
+
+					queryValueList, err := capnp.NewTextList(seg, int32(len(queryValues)))
+					CheckError(err)
+
+					log.WithFields(log.Fields{
+						"queryKey": queryKey,
+					}).Debug("query key")
+
+					for index, queryValue := range queryValues {
+						log.WithFields(log.Fields{
+							"queryValue": queryValue,
+						}).Debug("query value for key")
+						queryValueList.Set(index, queryValue)
+					}
+
+					keyValuePolicy.SetValues(queryValueList)
+					queryKeyValueList.Set(queryCount, keyValuePolicy)
+					queryCount++
+				}
+				policy.SetQuery(queryKeyValueList)
+
 				policyList.Set(index, policy)
 			}
 
@@ -150,6 +185,10 @@ func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 //Handler returns the http.HandlerFunc which handles the request via http and proxies it to the rpc server
 func (instance APISecurityGatewayProxy) Handler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.WithFields(log.Fields{
+			"url": r.URL.String(),
+		}).Debug("Received request")
+
 		w.Header().Set("X-CAPAPI", "1")
 		apiKeyValue, err := ParseAuthorization(r)
 
@@ -201,6 +240,25 @@ func (instance APISecurityGatewayProxy) Handler() http.HandlerFunc {
 			}
 
 			request.SetHeaders(headerList)
+
+			queryList, err := NewKeyValue_List(seg, int32(len(r.URL.Query())))
+			CheckError(err)
+
+			count = 0
+			for key, value := range r.URL.Query() {
+				log.WithFields(log.Fields{
+					"key":   key,
+					"value": strings.Join(value, ","),
+				}).Debug("processing request query")
+				query, err := NewKeyValue(seg)
+				CheckError(err)
+				query.SetKey(key)
+				query.SetValue(strings.Join(value, ","))
+				queryList.Set(count, query)
+				count++
+			}
+
+			request.SetQuery(queryList)
 
 			return p.SetRequestObj(request)
 		}).Response()

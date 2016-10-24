@@ -54,10 +54,30 @@ func (instance PolicySet) Map() map[string]interface{} {
 			headerMap[key] = headerValueArray
 		}
 
+		query, err := policy.Query()
+		CheckError(err)
+
+		queryMap := map[string][]string{}
+
+		for hI := 0; hI < query.Len(); hI++ {
+			key, err := query.At(hI).Key()
+			CheckError(err)
+			values, err := query.At(hI).Values()
+			queryValueArray := []string{}
+			for hvI := 0; hvI < values.Len(); hvI++ {
+				queryValue, err := values.At(hvI)
+				CheckError(err)
+
+				queryValueArray = append(queryValueArray, queryValue)
+			}
+			queryMap[key] = queryValueArray
+		}
+
 		policySet = append(policySet, map[string]interface{}{
 			"path":    path,
 			"verbs":   strings.Join(verbArray, ","),
 			"headers": headerMap,
+			"queries": queryMap,
 		})
 	}
 

@@ -64,7 +64,7 @@ func TestDelegation(t *testing.T) {
 			key, policyBytes := NewPolicySetBuilder().Build()
 			keystore.Set(key, policyBytes)
 
-			Convey("with port policy delegation", func() {
+			Convey("with port delegation", func() {
 				var jsonBytes = []byte(`[{"verbs":["put"]}]`)
 
 				req, _ := http.NewRequest("POST", delegateURL, bytes.NewBuffer(jsonBytes))
@@ -162,6 +162,49 @@ func TestDelegation(t *testing.T) {
 					newReq, _ := http.NewRequest("get", sut.APIGatewayProxy.URL, bytes.NewBuffer(jsonBytes))
 					newReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", delegatedKey))
 					newReq.Header.Set("A", "5")
+					newResp, err := client.Do(newReq)
+					if err != nil {
+						panic(err)
+					}
+
+					So(newResp.StatusCode, ShouldEqual, 401)
+				})
+			})
+
+			Convey("with query string delegation of specified key without any value restriction", func() {
+				var jsonBytes = []byte(`[{"query":{ "A":[] }}]`)
+
+				req, _ := http.NewRequest("POST", delegateURL, bytes.NewBuffer(jsonBytes))
+				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
+				resp, err := client.Do(req)
+				if err != nil {
+					panic(err)
+				}
+				defer resp.Body.Close()
+				delegatedKey, _ := ioutil.ReadAll(resp.Body)
+
+				Convey("must succeed", func() {
+					newReq, _ := http.NewRequest("get", sut.APIGatewayProxy.URL, bytes.NewBuffer(jsonBytes))
+					newReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", delegatedKey))
+					values := newReq.URL.Query()
+					values.Set("A", "2")
+					newReq.URL.RawQuery = values.Encode()
+
+					newResp, err := client.Do(newReq)
+					if err != nil {
+						panic(err)
+					}
+
+					So(newResp.StatusCode, ShouldEqual, 200)
+				})
+
+				Convey("must fail", func() {
+					newReq, _ := http.NewRequest("get", sut.APIGatewayProxy.URL, bytes.NewBuffer(jsonBytes))
+					newReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", delegatedKey))
+					values := newReq.URL.Query()
+					values.Set("B", "2")
+					newReq.URL.RawQuery = values.Encode()
+
 					newResp, err := client.Do(newReq)
 					if err != nil {
 						panic(err)
