@@ -39,6 +39,17 @@ func (instance PolicyBuilder) WithVerb(verb string) PolicyBuilder {
 	}
 }
 
+//WithVerbs adds each of the verbs to the collection of the policy and returns a PolicyBuilder.
+func (instance PolicyBuilder) WithVerbs(verbs []string) PolicyBuilder {
+	var returnBuilder = instance
+
+	for _, verb := range verbs {
+		returnBuilder = returnBuilder.WithVerb(verb)
+	}
+
+	return returnBuilder
+}
+
 //WithHeader adds a Header and permitted values to the policy and returns a PolicyBuilder.
 func (instance PolicyBuilder) WithHeader(key string, values []string) PolicyBuilder {
 	headers := instance.Headers
@@ -51,6 +62,17 @@ func (instance PolicyBuilder) WithHeader(key string, values []string) PolicyBuil
 	}
 }
 
+//WithHeaders adds the headers to the policy and returns a PolicyBuilder
+func (instance PolicyBuilder) WithHeaders(headers map[string][]string) PolicyBuilder {
+	var returnBuilder = instance
+
+	for key, values := range headers {
+		returnBuilder = returnBuilder.WithHeader(key, values)
+	}
+
+	return returnBuilder
+}
+
 //WithQuery adds a QueryString key and permitted values to the policy and returns a PolicyBuilder.
 func (instance PolicyBuilder) WithQuery(key string, values []string) PolicyBuilder {
 	query := instance.Query
@@ -61,6 +83,17 @@ func (instance PolicyBuilder) WithQuery(key string, values []string) PolicyBuild
 		Headers: instance.Headers,
 		Query:   query,
 	}
+}
+
+//WithQueries adds the queries to the policy and returns a PolicyBuilder
+func (instance PolicyBuilder) WithQueries(queries map[string][]string) PolicyBuilder {
+	var returnBuilder = instance
+
+	for key, values := range queries {
+		returnBuilder = returnBuilder.WithQuery(key, values)
+	}
+
+	return returnBuilder
 }
 
 //Build takes a message segment, builds and returns a Policy.

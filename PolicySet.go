@@ -3,7 +3,6 @@ package main
 import (
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	capnp "zombiezen.com/go/capnproto2"
 )
 
@@ -101,18 +100,10 @@ func (instance PolicySet) Validate(request HTTPRequest) bool {
 	}
 
 	if instance.HasDelegation() {
-		log.WithFields(log.Fields{
-			"hasDelegation": true,
-		}).Debug("PolictSet:Validate")
-
 		delegation, err := instance.Delegation()
 		CheckError(err)
 		return delegation.Validate(request)
 	}
-
-	log.WithFields(log.Fields{
-		"hasDelegation": false,
-	}).Debug("PolictSet:Validate")
 
 	return true
 }
@@ -129,61 +120,22 @@ func (instance PolicySet) Clone(segment *capnp.Segment) PolicySet {
 		policyBuilder := NewPolicyBuilder()
 
 		policy := policies.At(i)
+
 		verbs, err := policy.Verbs()
 		CheckError(err)
-
-		for verbIndex := 0; verbIndex < verbs.Len(); verbIndex++ {
-			verb, err := verbs.At(verbIndex)
-			CheckError(err)
-			policyBuilder = policyBuilder.WithVerb(verb)
-		}
+		policyBuilder = policyBuilder.WithVerbs(TextListToArray(verbs))
 
 		path, err := policy.Path()
 		CheckError(err)
-
 		policyBuilder = policyBuilder.WithPath(path)
 
 		headers, err := policy.Headers()
 		CheckError(err)
-
-		for headerIndex := 0; headerIndex < headers.Len(); i++ {
-			keyValuePolicy := headers.At(headerIndex)
-			key, err := keyValuePolicy.Key()
-			CheckError(err)
-
-			values, err := keyValuePolicy.Values()
-			CheckError(err)
-			var headerValueStrings = []string{}
-
-			for headerValueIndex := 0; headerValueIndex < values.Len(); headerValueIndex++ {
-				headerValue, err := values.At(headerValueIndex)
-				CheckError(err)
-				headerValueStrings = append(headerValueStrings, headerValue)
-			}
-
-			policyBuilder = policyBuilder.WithHeader(key, headerValueStrings)
-		}
+		policyBuilder = policyBuilder.WithHeaders(headers.Map())
 
 		queries, err := policy.Query()
 		CheckError(err)
-
-		for queryIndex := 0; queryIndex < queries.Len(); i++ {
-			keyValuePolicy := queries.At(queryIndex)
-			key, err := keyValuePolicy.Key()
-			CheckError(err)
-
-			values, err := keyValuePolicy.Values()
-			CheckError(err)
-			var queryValueStrings = []string{}
-
-			for queryValueIndex := 0; queryValueIndex < values.Len(); queryValueIndex++ {
-				queryValue, err := values.At(queryValueIndex)
-				CheckError(err)
-				queryValueStrings = append(queryValueStrings, queryValue)
-			}
-
-			policyBuilder = policyBuilder.WithQuery(key, queryValueStrings)
-		}
+		policyBuilder = policyBuilder.WithQueries(queries.Map())
 
 		policySetBuilder = policySetBuilder.WithPolicy(policyBuilder)
 	}
