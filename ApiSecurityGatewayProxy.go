@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -37,16 +38,23 @@ type APISecurityGatewayProxy struct {
 	UpStream string
 }
 
+func decodeJSONPolicyDtos(body io.ReadCloser) []PolicyJSONDto {
+
+	var policies []PolicyJSONDto
+
+	decoder := json.NewDecoder(body)
+	err := decoder.Decode(&policies)
+
+	CheckError(err)
+
+	return policies
+}
+
 //ControlHandler returns the http.HandlerFunc to allow for Delegations and Revocations to be requested via HTTP
 func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		var policies []PolicyJSONDto
-
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&policies)
-
-		CheckError(err)
+		var policies = decodeJSONPolicyDtos(r.Body)
 
 		w.Header().Set("X-CAPAPI", "1")
 		apiKeyValue, err := ParseAuthorization(r)
