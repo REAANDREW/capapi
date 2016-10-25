@@ -40,6 +40,7 @@ func (instance PolicyBuilder) WithVerb(verb string) PolicyBuilder {
 }
 
 //WithVerbs adds each of the verbs to the collection of the policy and returns a PolicyBuilder.
+//TODO: Make this params as opposed to an explicit array
 func (instance PolicyBuilder) WithVerbs(verbs []string) PolicyBuilder {
 	var returnBuilder = instance
 

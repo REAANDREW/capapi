@@ -9,10 +9,9 @@ import (
 
 func TestInProcessKeyStore(t *testing.T) {
 	log.SetLevel(log.ErrorLevel)
+	keyStore := CreateInProcKeyStore()
+
 	Convey("Returns", t, func() {
-		keyStore := InProcessKeyStore{
-			Keys: map[string][]byte{},
-		}
 
 		Convey("err when capability key is not found", func() {
 
@@ -37,26 +36,21 @@ func TestInProcessKeyStore(t *testing.T) {
 
 		key, _ := CreateKey()
 		policySet := NewPolicySetBuilder().
-			WithPolicy(NewPolicyBuilder().WithVerbs([]string{"GET", "POST"})).
+			WithPolicy(NewPolicyBuilder().WithVerbs([]string{"GET", "POST", "PUT"})).
 			BuildPolicySet()
-
-		store := InProcessKeyStore{
-			Keys: map[string][]byte{
-				key: policySet.Bytes(),
-			},
-		}
+		keyStore.Set(key, policySet.Bytes())
 
 		delegatedKey, _ := CreateKey()
 		delegatedPolicySet := NewPolicySetBuilder().
-			WithPolicy(NewPolicyBuilder().WithVerb("GET")).
+			WithPolicy(NewPolicyBuilder().WithVerbs([]string{"GET", "POST"})).
 			BuildPolicySet()
 
 		Convey("Delegate should succeed", func() {
-			err := store.Delegate(key, delegatedKey, delegatedPolicySet)
+			err := keyStore.Delegate(key, delegatedKey, delegatedPolicySet)
 			So(err, ShouldBeNil)
 
 			Convey("The delegation will be stored against the supplied key", func() {
-				result, _ := store.Get(delegatedKey)
+				result, _ := keyStore.Get(delegatedKey)
 				So(result, ShouldNotBeNil)
 
 				Convey("The delegation is wrapped with the parent delegation", func() {
@@ -65,22 +59,50 @@ func TestInProcessKeyStore(t *testing.T) {
 
 					So(resultPolicySet.Policy(0).HasVerb("GET"), ShouldBeTrue)
 					So(resultPolicySet.Policy(0).HasVerb("POST"), ShouldBeTrue)
+					So(resultPolicySet.Policy(0).HasVerb("PUT"), ShouldBeTrue)
 
 					Convey("The delegation is attached to the parent delegation", func() {
 						delegated, _ := resultPolicySet.Delegation()
 						So(delegated.Policy(0).HasVerb("GET"), ShouldBeTrue)
-						So(delegated.Policy(0).HasVerb("POST"), ShouldBeFalse)
+						So(delegated.Policy(0).HasVerb("POST"), ShouldBeTrue)
+						So(delegated.Policy(0).HasVerb("PUT"), ShouldBeFalse)
 					})
 				})
 			})
 
 			Convey("Revoke should succeed", func() {
-				err := store.Revoke(delegatedKey)
+				err := keyStore.Revoke(delegatedKey)
 				So(err, ShouldBeNil)
-				_, err = store.Get(delegatedKey)
+				_, err = keyStore.Get(delegatedKey)
 				So(err, ShouldEqual, ErrAPIKeyNotFound)
 			})
-		})
 
+			Convey("Revoking a delegation also revokes the child delegation", func() {
+				err := keyStore.Revoke(key)
+				So(err, ShouldBeNil)
+				_, err = keyStore.Get(delegatedKey)
+				So(err, ShouldEqual, ErrAPIKeyNotFound)
+				_, err = keyStore.Get(key)
+				So(err, ShouldEqual, ErrAPIKeyNotFound)
+			})
+
+			Convey("Revoking a delagtion with multiple levels of delegation", func() {
+				furtherDelegatedKey, _ := CreateKey()
+				furtherDelegatedPolicySet := NewPolicySetBuilder().
+					WithPolicy(NewPolicyBuilder().WithVerb("GET")).
+					BuildPolicySet()
+				keyStore.Delegate(delegatedKey, furtherDelegatedKey, furtherDelegatedPolicySet)
+
+				err := keyStore.Revoke(key)
+				So(err, ShouldBeNil)
+				_, err = keyStore.Get(furtherDelegatedKey)
+				So(err, ShouldEqual, ErrAPIKeyNotFound)
+				_, err = keyStore.Get(delegatedKey)
+				So(err, ShouldEqual, ErrAPIKeyNotFound)
+				_, err = keyStore.Get(key)
+				So(err, ShouldEqual, ErrAPIKeyNotFound)
+
+			})
+		})
 	})
 }
