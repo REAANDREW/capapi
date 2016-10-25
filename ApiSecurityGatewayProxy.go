@@ -2,52 +2,18 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net"
 	"net/http"
 	"strings"
 
 	capnp "zombiezen.com/go/capnproto2"
-	"zombiezen.com/go/capnproto2/rpc"
 
 	log "github.com/Sirupsen/logrus"
 )
 
-func getProxy(apiKeyValue string, factory HTTPProxyFactoryAPI, ctx context.Context) (HTTPProxyAPI, error) {
-	_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
-
-	apiKeyObj, _ := NewAPIKey(seg)
-	apiKeyObj.SetValue(apiKeyValue)
-
-	proxyResult, err := factory.GetHTTPProxy(ctx, func(p HTTPProxyFactoryAPI_getHTTPProxy_Params) error {
-		return p.SetKey(apiKeyObj)
-	}).Struct()
-
-	if err != nil {
-		return HTTPProxyAPI{}, err
-	}
-
-	proxy := proxyResult.Proxy()
-	return proxy, nil
-}
-
 //APISecurityGatewayProxy allows a caller to call the APISecurityGateway using the Cap'N Proto procotol.
 type APISecurityGatewayProxy struct {
 	UpStream string
-}
-
-func decodeJSONPolicyDtos(body io.ReadCloser) []PolicyJSONDto {
-
-	var policies []PolicyJSONDto
-
-	decoder := json.NewDecoder(body)
-	err := decoder.Decode(&policies)
-
-	CheckError(err)
-
-	return policies
 }
 
 //ControlHandler returns the http.HandlerFunc to allow for Delegations and Revocations to be requested via HTTP
@@ -55,7 +21,7 @@ func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-CAPAPI", "1")
 
-		var policies = decodeJSONPolicyDtos(r.Body)
+		var policies = DecodePolicyJSONDtos(r.Body)
 
 		apiKeyValue, err := ParseAuthorization(r)
 
@@ -201,15 +167,9 @@ func (instance APISecurityGatewayProxy) Handler() http.HandlerFunc {
 			return
 		}
 
-		c, _ := net.Dial("tcp", instance.UpStream)
-		defer c.Close()
-
-		conn := rpc.NewConn(rpc.StreamTransport(c), rpc.ConnLog(nil))
-		defer conn.Close()
-
 		ctx := context.Background()
-		factory := HTTPProxyFactoryAPI{Client: conn.Bootstrap(ctx)}
-		proxy, err := getProxy(apiKeyValue, factory, ctx)
+		factory := NewHTTPProxyFactoryAPI(ctx, instance.UpStream)
+		proxy, err := factory.GetProxy(apiKeyValue, ctx)
 
 		if err != nil {
 			log.Error(err)
