@@ -106,38 +106,10 @@ func (instance PolicyBuilder) Build(seg *capnp.Segment) Policy {
 	}
 	policy.SetVerbs(verbList)
 
-	headerList, _ := NewKeyValuePolicy_List(seg, int32(len(instance.Headers)))
-	count := 0
-	for key, value := range instance.Headers {
-		headerPolicy, _ := NewKeyValuePolicy(seg)
-		headerPolicy.SetKey(key)
-
-		headerValueList, _ := capnp.NewTextList(seg, int32(len(value)))
-		for i := 0; i < len(value); i++ {
-			headerValueList.Set(i, value[i])
-		}
-		headerPolicy.SetValues(headerValueList)
-
-		headerList.Set(count, headerPolicy)
-		count++
-	}
+	headerList, _ := KeyValuePolicyListFromMap(instance.Headers)
 	policy.SetHeaders(headerList)
 
-	queryList, _ := NewKeyValuePolicy_List(seg, int32(len(instance.Query)))
-	count = 0
-	for key, value := range instance.Query {
-		queryPolicy, _ := NewKeyValuePolicy(seg)
-		queryPolicy.SetKey(key)
-
-		queryValueList, _ := capnp.NewTextList(seg, int32(len(value)))
-		for i := 0; i < len(value); i++ {
-			queryValueList.Set(i, value[i])
-		}
-		queryPolicy.SetValues(queryValueList)
-
-		queryList.Set(count, queryPolicy)
-		count++
-	}
+	queryList, _ := KeyValuePolicyListFromMap(instance.Query)
 	policy.SetQuery(queryList)
 
 	policy.SetPath(instance.Path)

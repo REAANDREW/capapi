@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/url"
 
-	log "github.com/Sirupsen/logrus"
 	capnp "zombiezen.com/go/capnproto2"
 )
 
@@ -46,9 +45,6 @@ func (instance HTTPProxy) Request(call HTTPProxyAPI_request) error {
 func (instance HTTPProxy) Delegate(call HTTPProxyAPI_delegate) error {
 	scope, _ := call.Params.Scope()
 
-	log.WithFields(log.Fields(scope.Map())).Debug("delegating PolicySet")
-
-	//Create a new policy set
 	saveMsg, saveSeg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
 	parentClone := instance.scope.Clone(saveSeg)
