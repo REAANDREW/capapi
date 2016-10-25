@@ -5,7 +5,7 @@ import capnp "zombiezen.com/go/capnproto2"
 //EXTENSION METHODS FOR THE GENERATED CODE!
 
 //KeyValuePolicyListFromMap creates a new KeyValuePolicy_List from a map
-//TODO: Instead of checking the errors let them propogate up the chain
+//TODO: Instead of checking the errors let them propagate up the chain
 func KeyValuePolicyListFromMap(input map[string][]string) (KeyValuePolicy_List, error) {
 	_, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
 	CheckError(err)

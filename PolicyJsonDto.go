@@ -28,7 +28,7 @@ func DecodePolicyJSONDtos(body io.ReadCloser) []PolicyJSONDto {
 }
 
 //TextListFromArray creates a new TextList from the given input string array
-//TODO: Instead of checking the errors let them propogate up the chain
+//TODO: Instead of checking the errors let them propagate up the chain
 func TextListFromArray(input []string) (capnp.TextList, error) {
 	_, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
 	list, err := capnp.NewTextList(seg, int32(len(input)))
@@ -42,7 +42,7 @@ func TextListFromArray(input []string) (capnp.TextList, error) {
 }
 
 //NewPolicySetFromPolicyJSONDtos create a new PolicySet from an array of PolicyJSONDto
-//TODO: Instead of checking the errors let them propogate up the chain
+//TODO: Instead of checking the errors let them propagate up the chain
 func NewPolicySetFromPolicyJSONDtos(policies []PolicyJSONDto) (PolicySet, error) {
 
 	_, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
