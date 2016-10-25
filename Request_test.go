@@ -72,9 +72,7 @@ func TestCapapi(t *testing.T) {
 				req, _ := http.NewRequest("PUT", sut.APIGatewayProxy.URL, nil)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, _ := ioutil.ReadAll(resp.Body)
 
@@ -88,9 +86,7 @@ func TestCapapi(t *testing.T) {
 
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, _ := ioutil.ReadAll(resp.Body)
 
@@ -116,14 +112,10 @@ func TestCapapi(t *testing.T) {
 				req, _ := http.NewRequest("PUT", exactPath, nil)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+				CheckError(err)
 
 				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
@@ -137,9 +129,7 @@ func TestCapapi(t *testing.T) {
 
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, _ := ioutil.ReadAll(resp.Body)
 
@@ -163,14 +153,10 @@ func TestCapapi(t *testing.T) {
 				req, _ := http.NewRequest("PUT", exactPath, nil)
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+				CheckError(err)
 
 				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
@@ -185,9 +171,7 @@ func TestCapapi(t *testing.T) {
 
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, _ := ioutil.ReadAll(resp.Body)
 
@@ -211,14 +195,10 @@ func TestCapapi(t *testing.T) {
 				req.Header.Set("X-Something", "1")
 
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+				CheckError(err)
 
 				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
@@ -233,14 +213,10 @@ func TestCapapi(t *testing.T) {
 				req.Header.Set("X-Something", "2")
 
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+				CheckError(err)
 				So(resp.StatusCode, ShouldEqual, 401)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, "")
 			})
@@ -261,14 +237,10 @@ func TestCapapi(t *testing.T) {
 				req.URL.Query().Add("a", "1")
 
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+				CheckError(err)
 
 				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
@@ -282,14 +254,10 @@ func TestCapapi(t *testing.T) {
 				req.URL.Query().Add("b", "1")
 
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+				CheckError(err)
 
 				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
@@ -302,14 +270,10 @@ func TestCapapi(t *testing.T) {
 				req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", key))
 
 				resp, err := client.Do(req)
-				if err != nil {
-					log.Error(err)
-				}
+				CheckError(err)
 				defer resp.Body.Close()
 				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					panic(err)
-				}
+				CheckError(err)
 
 				So(resp.StatusCode, ShouldEqual, expectedResponseCode)
 				So(strings.Trim(string(body), "\n"), ShouldEqual, expectedResponseBody)
