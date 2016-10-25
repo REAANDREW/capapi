@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 
-	log "github.com/Sirupsen/logrus"
 	capnp "zombiezen.com/go/capnproto2"
 )
 
@@ -28,7 +27,53 @@ func DecodePolicyJSONDtos(body io.ReadCloser) []PolicyJSONDto {
 	return policies
 }
 
+//KeyValuePolicyListFromMap creates a new KeyValuePolicy_List from a map
+//TODO: Instead of checking the errors let them propogate up the chain
+func KeyValuePolicyListFromMap(input map[string][]string) (KeyValuePolicy_List, error) {
+	_, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
+	CheckError(err)
+
+	keyValueList, err := NewKeyValuePolicy_List(seg, int32(len(input)))
+	CheckError(err)
+
+	count := 0
+	for key, values := range input {
+		keyValuePolicy, err := NewKeyValuePolicy(seg)
+		CheckError(err)
+
+		keyValuePolicy.SetKey(key)
+
+		valueList, err := capnp.NewTextList(seg, int32(len(values)))
+		CheckError(err)
+
+		for index, Value := range values {
+			valueList.Set(index, Value)
+		}
+
+		keyValuePolicy.SetValues(valueList)
+		keyValueList.Set(count, keyValuePolicy)
+		count++
+	}
+
+	return keyValueList, nil
+}
+
+//TextListFromArray creates a new TextList from the given input string array
+//TODO: Instead of checking the errors let them propogate up the chain
+func TextListFromArray(input []string) (capnp.TextList, error) {
+	_, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
+	list, err := capnp.NewTextList(seg, int32(len(input)))
+	CheckError(err)
+
+	for index, value := range input {
+		list.Set(index, value)
+	}
+
+	return list, nil
+}
+
 //NewPolicySetFromPolicyJSONDtos create a new PolicySet from an array of PolicyJSONDto
+//TODO: Instead of checking the errors let them propogate up the chain
 func NewPolicySetFromPolicyJSONDtos(policies []PolicyJSONDto) (PolicySet, error) {
 
 	_, seg, err := capnp.NewMessage(capnp.SingleSegment(nil))
@@ -47,75 +92,16 @@ func NewPolicySetFromPolicyJSONDtos(policies []PolicyJSONDto) (PolicySet, error)
 
 		policy.SetPath(jsonPolicy.Path)
 
-		verbList, err := capnp.NewTextList(seg, int32(len(jsonPolicy.Verbs)))
+		verbList, err := TextListFromArray(jsonPolicy.Verbs)
 		CheckError(err)
-
-		for verbIndex, verb := range jsonPolicy.Verbs {
-			verbList.Set(verbIndex, verb)
-		}
-
 		policy.SetVerbs(verbList)
 
-		headerKeyValueList, err := NewKeyValuePolicy_List(seg, int32(len(jsonPolicy.Headers)))
+		headerKeyValueList, err := KeyValuePolicyListFromMap(jsonPolicy.Headers)
 		CheckError(err)
-
-		headerCount := 0
-		for headerKey, headerValues := range jsonPolicy.Headers {
-			keyValuePolicy, err := NewKeyValuePolicy(seg)
-			CheckError(err)
-
-			keyValuePolicy.SetKey(headerKey)
-
-			headerValueList, err := capnp.NewTextList(seg, int32(len(headerValues)))
-			CheckError(err)
-
-			for index, headerValue := range headerValues {
-				log.WithFields(log.Fields{
-					"headerKey":   headerKey,
-					"headerValue": headerValue,
-				}).Debug("adding headers to policy")
-				headerValueList.Set(index, headerValue)
-			}
-
-			keyValuePolicy.SetValues(headerValueList)
-			headerKeyValueList.Set(headerCount, keyValuePolicy)
-			headerCount++
-		}
 		policy.SetHeaders(headerKeyValueList)
 
-		queryKeyValueList, err := NewKeyValuePolicy_List(seg, int32(len(jsonPolicy.Query)))
+		queryKeyValueList, err := KeyValuePolicyListFromMap(jsonPolicy.Query)
 		CheckError(err)
-
-		queryCount := 0
-
-		log.WithFields(log.Fields{
-			"numberOfFields": len(jsonPolicy.Query),
-		}).Debug("About to iterate over Query")
-
-		for queryKey, queryValues := range jsonPolicy.Query {
-			keyValuePolicy, err := NewKeyValuePolicy(seg)
-			CheckError(err)
-
-			keyValuePolicy.SetKey(queryKey)
-
-			queryValueList, err := capnp.NewTextList(seg, int32(len(queryValues)))
-			CheckError(err)
-
-			log.WithFields(log.Fields{
-				"queryKey": queryKey,
-			}).Debug("query key")
-
-			for index, queryValue := range queryValues {
-				log.WithFields(log.Fields{
-					"queryValue": queryValue,
-				}).Debug("query value for key")
-				queryValueList.Set(index, queryValue)
-			}
-
-			keyValuePolicy.SetValues(queryValueList)
-			queryKeyValueList.Set(queryCount, keyValuePolicy)
-			queryCount++
-		}
 		policy.SetQuery(queryKeyValueList)
 
 		policyList.Set(index, policy)
