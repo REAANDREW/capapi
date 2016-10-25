@@ -26,6 +26,7 @@ func (instance KeyValuePolicy_List) Map() map[string][]string {
 		key, err := instance.At(i).Key()
 		CheckError(err)
 		values, err := instance.At(i).Values()
+		CheckError(err)
 		valueArray := []string{}
 		for hvI := 0; hvI < values.Len(); hvI++ {
 			value, err := values.At(hvI)
