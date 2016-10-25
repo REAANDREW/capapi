@@ -53,10 +53,10 @@ func decodeJSONPolicyDtos(body io.ReadCloser) []PolicyJSONDto {
 //ControlHandler returns the http.HandlerFunc to allow for Delegations and Revocations to be requested via HTTP
 func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-CAPAPI", "1")
 
 		var policies = decodeJSONPolicyDtos(r.Body)
 
-		w.Header().Set("X-CAPAPI", "1")
 		apiKeyValue, err := ParseAuthorization(r)
 
 		if err != nil {
@@ -64,15 +64,11 @@ func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 			return
 		}
 
-		c, _ := net.Dial("tcp", instance.UpStream)
-		defer c.Close()
-
-		conn := rpc.NewConn(rpc.StreamTransport(c), rpc.ConnLog(nil))
-		defer conn.Close()
-
 		ctx := context.Background()
-		factory := HTTPProxyFactoryAPI{Client: conn.Bootstrap(ctx)}
-		proxy, err := getProxy(apiKeyValue, factory, ctx)
+
+		factory := NewHTTPProxyFactoryAPI(ctx, instance.UpStream)
+
+		proxy, err := factory.GetProxy(apiKeyValue, ctx)
 
 		if err != nil {
 			log.Error(err)
