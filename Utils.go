@@ -8,3 +8,13 @@ func CheckError(err error) {
 		panic(err)
 	}
 }
+
+//ArrayContainsString checks if a string array contains a string value
+func ArrayContainsString(input []string, value string) bool {
+	for _, current := range input {
+		if current == value {
+			return true
+		}
+	}
+	return false
+}

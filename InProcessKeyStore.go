@@ -10,6 +10,16 @@ func (instance InProcessKeyStore) Set(key string, scope []byte) {
 	instance.Keys[key] = scope
 }
 
+//Delegate finds the key toe delegate and uses the state to create the root of the delegation
+func (instance InProcessKeyStore) Delegate(key string, delegatedKey string, policySet PolicySet) error {
+	bytes, err := instance.Get(key)
+	CheckError(err)
+	nextDelegation := PolicySetFromBytes(bytes)
+	nextDelegation.SetDelegation(policySet)
+	instance.Set(delegatedKey, nextDelegation.Bytes())
+	return nil
+}
+
 //Get returns the scope byte representation of the scope indexed by the key.
 //If the key is not present in the map then an error is returned.
 func (instance InProcessKeyStore) Get(key string) ([]byte, error) {

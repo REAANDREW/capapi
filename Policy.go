@@ -224,3 +224,11 @@ func (instance Policy) Validate(request HTTPRequest) bool {
 
 	return verbResult && pathResult && headersResult && queryResult
 }
+
+//HasVerb returns bool whether or not the Policy contains the supplied verb
+func (instance Policy) HasVerb(verb string) bool {
+	verbs, err := instance.Verbs()
+	verbsArray := TextListToArray(verbs)
+	CheckError(err)
+	return ArrayContainsString(verbsArray, verb)
+}

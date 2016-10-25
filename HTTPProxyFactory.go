@@ -1,10 +1,6 @@
 package main
 
-import (
-	"net/url"
-
-	capnp "zombiezen.com/go/capnproto2"
-)
+import "net/url"
 
 //HTTPProxyFactory return a HTTPProxy to the calling rpc client which has the relevant capability attached.
 type HTTPProxyFactory struct {
@@ -23,8 +19,10 @@ func (instance HTTPProxyFactory) GetHTTPProxy(call HTTPProxyFactoryAPI_getHTTPPr
 		//panic(err)
 	}
 
-	msg, _ := capnp.Unmarshal(bytesValue)
-	scope, _ := ReadRootPolicySet(msg)
+	//msg, _ := capnp.Unmarshal(bytesValue)
+	//scope, _ := ReadRootPolicySet(msg)
+
+	scope := PolicySetFromBytes(bytesValue)
 
 	server := HTTPProxyAPI_ServerToClient(HTTPProxy{
 		APIKey:   apiKey,

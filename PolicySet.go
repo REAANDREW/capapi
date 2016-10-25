@@ -110,7 +110,7 @@ func (instance PolicySet) Validate(request HTTPRequest) bool {
 
 // Clone creates a new PolicySet which is a clone of the instance.
 // It returns the new PolicySet
-func (instance PolicySet) Clone(segment *capnp.Segment) PolicySet {
+func (instance PolicySet) Clone() PolicySet {
 	policySetBuilder := NewPolicySetBuilder()
 
 	policies, err := instance.Policies()
@@ -140,5 +140,39 @@ func (instance PolicySet) Clone(segment *capnp.Segment) PolicySet {
 		policySetBuilder = policySetBuilder.WithPolicy(policyBuilder)
 	}
 
-	return policySetBuilder.BuildPolicySet(segment)
+	return policySetBuilder.BuildPolicySet()
+}
+
+//Bytes returns the byte representation  of the PolicySet
+func (instance PolicySet) Bytes() []byte {
+	msg, _, _ := capnp.NewMessage(capnp.SingleSegment(nil))
+	msg.SetRootPtr(instance.ToPtr())
+	byteValue, err := msg.Marshal()
+	CheckError(err)
+	return byteValue
+}
+
+//PolicySetFromBytes takes a byte array and returns the PolicySet
+func PolicySetFromBytes(bytes []byte) PolicySet {
+	msg, err := capnp.Unmarshal(bytes)
+	CheckError(err)
+	scope, err := ReadRootPolicySet(msg)
+	CheckError(err)
+	return scope
+}
+
+//NumberOfPoliciesEquals returns bool when the number of policies equals the value expected
+func (instance PolicySet) NumberOfPoliciesEquals(value int) bool {
+	policies, err := instance.Policies()
+	CheckError(err)
+
+	return policies.Len() == value
+}
+
+//Policy returns the Policy at the index specified
+func (instance PolicySet) Policy(index int) Policy {
+	policies, err := instance.Policies()
+	CheckError(err)
+
+	return policies.At(index)
 }

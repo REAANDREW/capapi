@@ -17,7 +17,8 @@ func (instance PolicySetBuilder) WithPolicy(builder PolicyBuilder) PolicySetBuil
 }
 
 //BuildPolicySet takes a message segment, iterates over the PolicyBuilders.
-func (instance PolicySetBuilder) BuildPolicySet(seg *capnp.Segment) PolicySet {
+func (instance PolicySetBuilder) BuildPolicySet() PolicySet {
+	_, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 	policySet, _ := NewRootPolicySet(seg)
 	policyList, _ := NewPolicy_List(seg, int32(len(instance.PolicyBuilders)))
 
@@ -34,12 +35,14 @@ func (instance PolicySetBuilder) BuildPolicySet(seg *capnp.Segment) PolicySet {
 //Build returns a string key and also the byte representation of a built PolicySet.
 func (instance PolicySetBuilder) Build() (string, []byte) {
 
-	msg, seg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
+	msg, _, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-	instance.BuildPolicySet(seg)
+	policySet := instance.BuildPolicySet()
 
 	key, err := CreateKey()
 	CheckError(err)
+
+	msg.SetRootPtr(policySet.ToPtr())
 
 	byteValue, err := msg.Marshal()
 	CheckError(err)

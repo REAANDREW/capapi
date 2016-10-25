@@ -45,9 +45,9 @@ func (instance HTTPProxy) Request(call HTTPProxyAPI_request) error {
 func (instance HTTPProxy) Delegate(call HTTPProxyAPI_delegate) error {
 	scope, _ := call.Params.Scope()
 
-	saveMsg, saveSeg, _ := capnp.NewMessage(capnp.SingleSegment(nil))
+	saveMsg, _, _ := capnp.NewMessage(capnp.SingleSegment(nil))
 
-	parentClone := instance.scope.Clone(saveSeg)
+	parentClone := instance.scope.Clone()
 
 	parentClone.SetDelegation(scope)
 
