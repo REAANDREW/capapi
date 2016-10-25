@@ -72,7 +72,13 @@ func TestInProcessKeyStore(t *testing.T) {
 						So(delegated.Policy(0).HasVerb("POST"), ShouldBeFalse)
 					})
 				})
+			})
 
+			Convey("Revoke should succeed", func() {
+				err := store.Revoke(delegatedKey)
+				So(err, ShouldBeNil)
+				_, err = store.Get(delegatedKey)
+				So(err, ShouldEqual, ErrAPIKeyNotFound)
 			})
 		})
 

@@ -20,6 +20,12 @@ func (instance InProcessKeyStore) Delegate(key string, delegatedKey string, poli
 	return nil
 }
 
+//Revoke removes the specified key from the
+func (instance InProcessKeyStore) Revoke(key string) error {
+	delete(instance.Keys, key)
+	return nil
+}
+
 //Get returns the scope byte representation of the scope indexed by the key.
 //If the key is not present in the map then an error is returned.
 func (instance InProcessKeyStore) Get(key string) ([]byte, error) {
