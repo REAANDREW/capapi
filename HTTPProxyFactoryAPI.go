@@ -8,6 +8,8 @@ import (
 	"zombiezen.com/go/capnproto2/rpc"
 )
 
+//EXTENSION METHODS FOR THE GENERATED CODE!
+
 //NewHTTPProxyFactoryAPI encapsulates the details for creating a new HTTPProxyFactoryAPI
 func NewHTTPProxyFactoryAPI(ctx context.Context, address string) HTTPProxyFactoryAPI {
 	c, _ := net.Dial("tcp", address)

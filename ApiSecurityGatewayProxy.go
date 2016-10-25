@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	capnp "zombiezen.com/go/capnproto2"
 
@@ -63,10 +62,6 @@ func (instance APISecurityGatewayProxy) ControlHandler() http.HandlerFunc {
 //Handler returns the http.HandlerFunc which handles the request via http and proxies it to the rpc server
 func (instance APISecurityGatewayProxy) Handler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.WithFields(log.Fields{
-			"url": r.URL.String(),
-		}).Debug("Received request")
-
 		w.Header().Set("X-CAPAPI", "1")
 		apiKeyValue, err := ParseAuthorization(r)
 
@@ -94,42 +89,12 @@ func (instance APISecurityGatewayProxy) Handler() http.HandlerFunc {
 			request.SetVerb(r.Method)
 			request.SetPath(r.URL.Path)
 
-			headerList, err := NewKeyValue_List(seg, int32(len(r.Header)))
+			headerList, err := KeyValueListFromMap(r.Header)
 			CheckError(err)
-
-			count := 0
-			for key, value := range r.Header {
-				log.WithFields(log.Fields{
-					"key":   key,
-					"value": strings.Join(value, ","),
-				}).Debug("processing request header")
-				header, err := NewKeyValue(seg)
-				CheckError(err)
-				header.SetKey(key)
-				header.SetValue(strings.Join(value, ","))
-				headerList.Set(count, header)
-				count++
-			}
-
 			request.SetHeaders(headerList)
 
-			queryList, err := NewKeyValue_List(seg, int32(len(r.URL.Query())))
+			queryList, err := KeyValueListFromMap(r.URL.Query())
 			CheckError(err)
-
-			count = 0
-			for key, value := range r.URL.Query() {
-				log.WithFields(log.Fields{
-					"key":   key,
-					"value": strings.Join(value, ","),
-				}).Debug("processing request query")
-				query, err := NewKeyValue(seg)
-				CheckError(err)
-				query.SetKey(key)
-				query.SetValue(strings.Join(value, ","))
-				queryList.Set(count, query)
-				count++
-			}
-
 			request.SetQuery(queryList)
 
 			return p.SetRequestObj(request)
