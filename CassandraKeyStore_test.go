@@ -11,7 +11,7 @@ import (
 
 func createCassandraSession(clusterMembers []string) *gocql.Session {
 	cluster := gocql.NewCluster(clusterMembers...)
-	cluster.ProtoVersion = 3
+	cluster.ProtoVersion = 2
 	cluster.Keyspace = "capapi"
 	cluster.Consistency = gocql.Quorum
 	session, err := cluster.CreateSession()
@@ -61,7 +61,7 @@ func TestCassandraKeyStore(t *testing.T) {
 	Convey("Testing my knowledge of the GOCQL driver for Cassandra", t, func() {
 
 		cluster := gocql.NewCluster("0.0.0.0:9042")
-		cluster.ProtoVersion = 3
+		cluster.ProtoVersion = 2
 		cluster.Keyspace = "capapi"
 		cluster.Consistency = gocql.Quorum
 		session, err := cluster.CreateSession()

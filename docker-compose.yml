@@ -1,5 +1,5 @@
 cassandraM:
-    image: cassandra:latest
+    image: cassandra:2.2
     ports: 
         - "7000:7000"
         - "7001:7001"
