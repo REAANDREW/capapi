@@ -11,6 +11,9 @@ capnproto:
 	go get -u -t zombiezen.com/go/capnproto2/...
 	capnp compile -I$$GOPATH/src/zombiezen.com/go/capnproto2/std -ogo capapi.capnp
 
+install: capnproto
+	cqlsh --cqlversion=3.4.2 -f capability-setup.cql 0.0.0.0
+
 build: 
 	go get -t ./...
 	go build
@@ -28,4 +31,4 @@ release:
 		GOOS=windows GOARCH=amd64 go build -o release/$(project)-windows-amd64 $(package)
 		GOOS=windows GOARCH=386 go build -o release/$(project)-windows-386 $(package)
 
-.PHONY: capnproto build test release
+.PHONY: capnproto build test release install capnproto cqlsh

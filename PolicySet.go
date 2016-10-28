@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"strings"
 
 	capnp "zombiezen.com/go/capnproto2"
@@ -75,6 +76,13 @@ func (instance PolicySet) Map() map[string]interface{} {
 
 	returnMap["policySet"] = policySet
 	return returnMap
+}
+
+//JSON returns the JSON representation of the PolicySet
+func (instance PolicySet) JSON() string {
+	jsonBytes, err := json.Marshal(instance.Map())
+	CheckError(err)
+	return string(jsonBytes)
 }
 
 // Validate iterates through each Policy in the set.

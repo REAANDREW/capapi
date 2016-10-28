@@ -12,7 +12,6 @@ func TestInProcessKeyStore(t *testing.T) {
 	keyStore := CreateInProcKeyStore()
 
 	Convey("Returns", t, func() {
-
 		Convey("err when capability key is not found", func() {
 
 			_, err := keyStore.Get("talula")
@@ -33,7 +32,6 @@ func TestInProcessKeyStore(t *testing.T) {
 	})
 
 	Convey("Delegate", t, func() {
-
 		key, _ := CreateKey()
 		policySet := NewPolicySetBuilder().
 			WithPolicy(NewPolicyBuilder().WithVerbs([]string{"GET", "POST", "PUT"})).
