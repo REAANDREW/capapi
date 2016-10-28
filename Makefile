@@ -12,7 +12,7 @@ capnproto:
 	capnp compile -I$$GOPATH/src/zombiezen.com/go/capnproto2/std -ogo capapi.capnp
 
 install: capnproto
-	cqlsh --cqlversion=3.4.2 -f capability-setup.cql 0.0.0.0
+	cqlsh --cqlversion=3.1.7 -f capability-setup.cql 0.0.0.0
 
 build: 
 	go get -t ./...
