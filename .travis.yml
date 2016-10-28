@@ -20,6 +20,8 @@ addons:
     - g++-4.8
 install:
     - make install
+before_script:
+    - service cassandra status
 script:
     - make build
     - make test
