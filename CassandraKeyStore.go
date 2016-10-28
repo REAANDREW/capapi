@@ -43,7 +43,7 @@ func (instance *CassandraKeyStore) Get(key string) ([]byte, error) {
 //Start connects to the Cassandra DB and creates a session which the CassandraKeyStore can use
 func (instance *CassandraKeyStore) Start() error {
 	cluster := gocql.NewCluster(instance.clusterMembers...)
-	cluster.ProtoVersion = 4
+	cluster.ProtoVersion = 2
 	cluster.Keyspace = "capapi"
 	cluster.Consistency = gocql.Quorum
 	session, err := cluster.CreateSession()
