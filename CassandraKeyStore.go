@@ -37,7 +37,14 @@ func (instance *CassandraKeyStore) Revoke(key string) error {
 //Get returns the scope byte representation of the scope indexed by the key.
 //If the key is not present in the map then an error is returned.
 func (instance *CassandraKeyStore) Get(key string) ([]byte, error) {
-	return []byte{}, nil
+	var id string
+	var policySetValue []byte
+
+	if err := instance.session.Query(`SELECT api_key, policy_set FROM capability WHERE api_key = ? LIMIT 1`, key).Consistency(gocql.One).Scan(&id, &policySetValue); err != nil {
+		return []byte{}, err
+	}
+
+	return policySetValue, nil
 }
 
 //Start connects to the Cassandra DB and creates a session which the CassandraKeyStore can use

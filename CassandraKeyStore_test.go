@@ -56,6 +56,22 @@ func TestCassandraKeyStore(t *testing.T) {
 
 			So(id, ShouldEqual, key)
 		})
+
+		Convey("Get", func() {
+			key, _ := CreateKey()
+			policySet := NewPolicySetBuilder().
+				WithPolicy(NewPolicyBuilder().WithVerbs([]string{"GET", "POST", "PUT"})).BuildPolicySet()
+			policyBytes := policySet.Bytes()
+
+			if err := cassandraSession.Query(`INSERT INTO capability (api_key,policy_set) VALUES (?, ?)`, key, policyBytes).Exec(); err != nil {
+				log.Fatal(err)
+			}
+
+			bytes, err := cassandraKeyStore.Get(key)
+
+			So(err, ShouldBeNil)
+			So(bytes, ShouldResemble, policyBytes)
+		})
 	})
 
 	Convey("Testing my knowledge of the GOCQL driver for Cassandra", t, func() {
