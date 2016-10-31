@@ -11,6 +11,7 @@ Capapi is a object capability based HTTP API Security Gateway.
 
 TBC
 
+
 ## Rough Write Up
 
 - A KeyStore has a list of PolicySets indexed by an APIKey
@@ -66,3 +67,81 @@ To ensure that the caller only has a reference to a Proxy, this project uses the
 >
 > https://smpfle21zb7r5nnat5uq.oasis.sandstorm.io/index.html#/
 >
+
+
+## Demonstration
+
+The following demonstration uses curl and the json server to create a simple project management application using capabilities to enforce what different team members are able to do and allowing the team members to delegate control to other members.
+
+### Steps
+
+#### Step 1
+
+**Bootstrap the system with some high level privileges**
+
+#### Step 2
+
+**Start the infrastructure**
+
+For this we will use docker-compose to easily stand up everything we need to get this application running being:
+
+- The upstream API which in this case will be a running instance of the JSON Server
+- An instance of Cassandra which will act as our capability store
+- An instance of the Gateway
+- An instance of the HTTP-to-RPC Bridge so that we can stick with HTTP when consuming the upstream HTTP JSON Server.
+
+#### Step 3
+
+**Create a delegation for Bob who is the Product Owner**
+
+The delegation will have the following attributes:
+
+- Path
+  - /clients/bob/projects
+
+#### Step 4
+
+**Bob create a new project called 'Baseline the Web Applications'**
+
+#### Step 5
+
+**Bob adds a new task to the project called 'Define initial set of metrics to collect'**
+
+#### Step 6
+
+**Bob delegates project control to Carol with the following attributes**
+
+- Path
+  - /clients/bob/projects/:projectID/tasks
+- Verbs
+  - GET, POST
+
+#### Step 7
+
+**Carol assigns the task 'Define initial set of metrics to collect' to Alice and so delegates her access with the following attributes**
+
+- Path
+  - /clients/bob/projects/:projectID/tasks/:taskID
+- Verbs
+  - GET, POST
+
+#### Step 8
+
+**Carol leaves the organisation so Bob revokes Carol's permissions which in turn revokes Alice's permissions**
+
+#### Step 9
+
+**Bob delegates access to Alice to continue her job**
+
+- Path
+  - /clients/bob/projects/:projectID/tasks/:taskID
+- Verbs
+  - GET, POST
+
+#### Step 10
+
+Jim steals  Alice's API Key without Alice's knowing (shared computer, bad organisation security, read her email etc...)
+
+Jim tries and fails to do anything other than update task :taskID
+
+
