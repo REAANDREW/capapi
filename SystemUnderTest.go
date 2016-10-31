@@ -9,6 +9,9 @@ import (
 	"time"
 )
 
+//TestPort The port to use for the gatewaty in the SystemUnderTest
+const TestPort = 12345
+
 //SystemUnderTest is a facade to start the APISecurityGateway, APISecurityGatewayProxy and a Fake Upstream HTTP API in order to test the solution.
 type SystemUnderTest struct {
 	APIGateway             APISecurityGateway
@@ -35,7 +38,7 @@ func CreateSystemUnderTest(keyStore KeyStore) *SystemUnderTest {
 	}))
 
 	var gatewayProxy = APISecurityGatewayProxy{
-		UpStream: ":12345",
+		UpStream: fmt.Sprintf(":%d", TestPort),
 	}
 
 	instance.APIGatewayProxy = httptest.NewUnstartedServer(gatewayProxy.Handler())
@@ -60,7 +63,7 @@ func (instance *SystemUnderTest) Start() {
 	instance.APIGatewayProxy.Start()
 	instance.APIGatewayControlProxy.Start()
 
-	serverListener, err := net.Listen("tcp", ":12345")
+	serverListener, err := net.Listen("tcp", fmt.Sprintf(":%d", TestPort))
 	instance.ServerListener = serverListener
 
 	CheckError(err)
