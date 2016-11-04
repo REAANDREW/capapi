@@ -31,7 +31,6 @@ func CreateSystemUnderTest(keyStore KeyStore) *SystemUnderTest {
 	instance.KeyStore = keyStore
 
 	instance.FakeEndpoint = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//var expectedResponseBody = "You Made It Baby, Yeh!"
 		var expectedResponseBody = instance.ResponseBody
 		w.WriteHeader(instance.ResponseCode)
 		fmt.Fprintln(w, expectedResponseBody)

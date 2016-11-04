@@ -24,12 +24,12 @@ var (
 	gatewayPort     = gateway.Flag("port", "The port for the gateway").Default("27520").String()
 	gatewayUpstream = gateway.Flag("upstream", "The upstream API").Required().String()
 
-	proxy            = app.Command("http-proxy", "Start a new gateway http proxy")
-	proxyHost        = proxy.Flag("host", "The hostname for the proxy").Default("0.0.0.0").String()
-	proxyPort        = proxy.Flag("port", "The port for the proxy").Default("80").String()
-	proxyControlPort = proxy.Flag("control-port", "The port for the proxy control").Default("27526").String()
-	upstreamHost     = proxy.Flag("upstream-host", "The hostname for the upstream gateway").Default("0.0.0.0").String()
-	upstreamPort     = proxy.Flag("upstream-port", "The port for the upstream gateway").Default("27520").String()
+	bridge            = app.Command("bridge", "Start a new gateway http bridge")
+	bridgeHost        = bridge.Flag("host", "The hostname for the bridge").Default("0.0.0.0").String()
+	bridgePort        = bridge.Flag("port", "The port for the bridge").Default("80").String()
+	bridgeControlPort = bridge.Flag("control-port", "The port for the bridge control").Default("27526").String()
+	upstreamHost      = bridge.Flag("upstream-host", "The hostname for the upstream gateway").Default("0.0.0.0").String()
+	upstreamPort      = bridge.Flag("upstream-port", "The port for the upstream gateway").Default("27520").String()
 )
 
 func main() {
@@ -56,7 +56,7 @@ func main() {
 		go gateway.Start(gatewayListener)
 		fmt.Println(fmt.Sprintf("server running..."))
 
-	case proxy.FullCommand():
+	case bridge.FullCommand():
 
 		fmt.Println("You are running a proxy")
 

@@ -59,7 +59,6 @@ func TestDelegation(t *testing.T) {
 		})
 
 		Convey("with initial capability", func() {
-
 			client := &http.Client{}
 			key, policyBytes := NewPolicySetBuilder().Build()
 			keystore.Set(key, policyBytes)
